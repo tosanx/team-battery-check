@@ -1,0 +1,2649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q2 Retro - Team Battery Session</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Wise Design System Variables */
+    :root {
+      --wise-bright-green: #9FE870;
+      --wise-forest-green: #163300;
+      --wise-content-primary: #0E0F0C;
+      --wise-content-secondary: #454745;
+      --wise-content-tertiary: #6A6C6A;
+      --wise-background-screen: #FFFFFF;
+      --wise-background-neutral: rgba(22, 51, 0, 0.08);
+      --wise-border-neutral: rgba(14, 15, 12, 0.12);
+      --wise-interactive-primary: #163300;
+      --wise-interactive-accent: #9FE870;
+      --wise-sentiment-positive: #2F5711;
+      --wise-sentiment-negative: #A8200D;
+      --wise-base-dark: #121511;
+
+      /* Spacing */
+      --space-4: 4px;
+      --space-8: 8px;
+      --space-12: 12px;
+      --space-16: 16px;
+      --space-24: 24px;
+      --space-32: 32px;
+      --space-40: 40px;
+      --space-48: 48px;
+
+      /* Border Radius */
+      --radius-small: 16px;
+      --radius-medium: 20px;
+      --radius-large: 30px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--wise-background-neutral);
+      color: var(--wise-content-primary);
+    }
+
+    /* Ensure phone device content stays white for headings and main text */
+    .phone-content h2, .phone-content h3 {
+      color: white !important;
+    }
+
+    .phone-screen {
+      color: white;
+    }
+
+    /* Status bar should stay white */
+    .phone-screen > div:first-child {
+      color: white !important;
+    }
+
+    .phone-screen > div:first-child * {
+      color: white !important;
+    }
+
+    /* Phone device styling */
+    .phone-device {
+      width: 393px;
+      max-width: 100%;
+      margin: 0 auto;
+      background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+      border-radius: 50px;
+      padding: 12px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9),
+                  inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+                  0 0 0 1px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    /* Dynamic Island */
+    .dynamic-island {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 125px;
+      height: 37px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-dot {
+      width: 8px;
+      height: 8px;
+      background: #0a0a0a;
+      border-radius: 50%;
+      border: 1px solid #1a1a1a;
+    }
+
+    .phone-screen {
+      background: #000;
+      border-radius: 42px;
+      overflow: hidden;
+      position: relative;
+      height: 750px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px;
+    }
+
+    .phone-content::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .phone-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .phone-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .phone-content:hover::-webkit-scrollbar-thumb {
+      opacity: 1;
+    }
+
+    .phone-content.scrolling::-webkit-scrollbar-thumb {
+      opacity: 1;
+    }
+
+    /* Lock Screen Styling */
+    .lock-screen {
+      background: linear-gradient(180deg, rgba(26, 26, 46, 0.85) 0%, rgba(15, 15, 30, 0.95) 100%),
+                  url('https://images.pexels.com/photos/1103970/pexels-photo-1103970.jpeg?auto=compress&cs=tinysrgb&w=800') center/cover;
+      height: 100%;
+      position: relative;
+      padding: 60px 20px 20px;
+    }
+
+    .lock-time {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .lock-time-hours {
+      font-size: 72px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .lock-date {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 32px;
+    }
+
+    .notification-card {
+      background: rgba(30, 30, 40, 0.85);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    .notification-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .notification-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .notification-app {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      flex: 1;
+    }
+
+    .notification-time {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .notification-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      min-height: 40px;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    .notification-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .notification-delete {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 59, 48, 0.2);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      color: #ff3b30;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .notification-card:hover .notification-delete {
+      opacity: 1;
+    }
+
+    .add-notification-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .add-notification-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Large Battery with draggable inside */
+    .large-battery {
+      width: 100%;
+      height: 70px;
+      background: #1a1a1a;
+      border: 3px solid rgba(167, 166, 168, 0.3);
+      border-radius: 22px;
+      position: relative;
+      padding: 4px;
+      overflow: visible;
+      cursor: pointer;
+    }
+
+    .large-battery::after {
+      content: '';
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 30px;
+      background: rgba(167, 166, 168, 0.3);
+      border-radius: 0 6px 6px 0;
+    }
+
+    .battery-fill-large {
+      height: 100%;
+      border-radius: 18px;
+      transition: width 0.1s ease;
+      position: relative;
+    }
+
+    .battery-percentage {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+      z-index: 10;
+      mix-blend-mode: difference;
+      pointer-events: none;
+    }
+
+    .battery-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    .battery-knob {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .large-battery:hover .battery-knob {
+      opacity: 1;
+    }
+
+    /* App card styling */
+    .app-card {
+      background: #1f1f1f;
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .app-icon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .app-icon:hover::after {
+      content: '✎';
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 2px solid white;
+    }
+
+    /* Slider styling */
+    .slider-container {
+      flex: 1;
+      position: relative;
+    }
+
+    .slider-track {
+      width: 100%;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .slider-fill {
+      height: 100%;
+      border-radius: 4px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transition: width 0.1s ease;
+      pointer-events: none;
+    }
+
+    .slider-input {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 20px;
+      transform: translateY(-50%);
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .slider-knob {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 11;
+    }
+
+    .slider-container:hover .slider-knob {
+      opacity: 1;
+    }
+
+    .percentage-display {
+      background: #131212;
+      border: 1px solid #292929;
+      border-radius: 11px;
+      padding: 10px 16px;
+      min-width: 64px;
+      text-align: center;
+      font-size: 13px;
+      color: #5b5b5b;
+      font-weight: 600;
+      cursor: text;
+    }
+
+    .percentage-input {
+      background: #131212;
+      border: 1px solid #292929;
+      border-radius: 11px;
+      padding: 10px 16px;
+      min-width: 64px;
+      text-align: center;
+      font-size: 13px;
+      color: #5b5b5b;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .percentage-input:focus {
+      border-color: #00c84f;
+      color: #00c84f;
+    }
+
+    /* Background processes */
+    .bg-process-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .bg-process-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #5b5b5b;
+      font-size: 14px;
+      padding: 8px 0;
+      outline: none;
+      resize: none;
+      overflow: hidden;
+      min-height: 24px;
+      line-height: 1.5;
+    }
+
+    .bg-process-input::placeholder {
+      color: #3a3a3a;
+    }
+
+    /* Charger section */
+    .charger-section {
+      background: #1f1f1f;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .charger-input {
+      width: 100%;
+      background: rgba(255, 222, 35, 0.05);
+      border: 1px solid rgba(255, 222, 35, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      color: #ffd700;
+      font-size: 13px;
+      margin-bottom: 8px;
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.5;
+      outline: none;
+    }
+
+    .charger-input::placeholder {
+      color: rgba(255, 222, 35, 0.3);
+    }
+
+    .update-input {
+      width: 100%;
+      background: rgba(181, 212, 244, 0.05);
+      border: 1px solid rgba(181, 212, 244, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      color: #b5d4f4;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.5;
+      outline: none;
+    }
+
+    .update-input::placeholder {
+      color: rgba(181, 212, 244, 0.3);
+    }
+
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hover-lift { transition: all 0.2s ease; }
+    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+
+    /* Picker modal */
+    .picker-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .picker-content {
+      background: #1a1a1a;
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .picker-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .picker-option {
+      background: #2a2a2a;
+      border: 2px solid transparent;
+      border-radius: 16px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .picker-option:hover {
+      background: #333;
+    }
+
+    .picker-option.selected {
+      border-color: #00c84f;
+      background: rgba(0, 200, 79, 0.1);
+    }
+
+    .add-new-option {
+      background: #2a2a2a;
+      border: 2px dashed #555;
+      border-radius: 16px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #999;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .add-new-option:hover {
+      background: #333;
+      border-color: #00c84f;
+      color: #00c84f;
+    }
+
+    /* Segmented Control - Wise Design */
+    .segmented-control {
+      display: inline-flex;
+      background: var(--wise-background-neutral);
+      border-radius: 12px;
+      padding: 4px;
+      position: relative;
+      margin-bottom: var(--space-16);
+    }
+
+    .segmented-control-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--wise-content-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+      z-index: 1;
+      min-width: 80px;
+    }
+
+    .segmented-control-btn.active {
+      color: var(--wise-content-primary);
+    }
+
+    .segmented-control-indicator {
+      position: absolute;
+      background: var(--wise-background-screen);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      height: calc(100% - 8px);
+      top: 4px;
+      z-index: 0;
+    }
+
+    /* Device transitions */
+    .device-wrapper {
+      position: relative;
+      width: 393px;
+      max-width: 100%;
+    }
+
+    .devices-stack {
+      position: relative;
+      width: 100%;
+      min-height: 774px;
+    }
+
+    .phone-device {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .phone-device.device-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .phone-device.device-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Lock screen status bar */
+    .lock-status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 600;
+      z-index: 10;
+    }
+
+    .devices-container {
+      display: inline-flex;
+      gap: 22.4em;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* Custom Modal */
+    .custom-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    }
+
+    .custom-modal-content {
+      background: var(--wise-background-screen);
+      border-radius: var(--radius-medium);
+      padding: var(--space-32);
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .participant-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #2a2a2a;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .participant-avatar-placeholder {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 700;
+      border: 4px solid #2a2a2a;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .device-with-avatar {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="root" class="min-h-screen"></div>
+
+  <script>
+// Firebase Configuration - REPLACE WITH YOUR CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyB1Jx-PaENpDjUeNUQ2h9z8TP7w5i3CaQk",
+  authDomain: "battery-checks.firebaseapp.com",
+  projectId: "battery-checks",
+  storageBucket: "battery-checks.firebasestorage.app",
+  messagingSenderId: "298497439752",
+  appId: "1:298497439752:web:62a18f0a1c7f66ded439bd"
+};
+
+// Initialize Firebase
+let db = null;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+  console.warn('Falling back to localStorage');
+}
+
+const APP_COLORS=['#7F77DD','#1D9E75','#D85A30','#378ADD','#639922','#BA7517','#D4537E','#E24B4A','#185FA5','#0F6E56','#993C1D','#534AB7'];
+const APP_ICONS=['📊','📦','🌍','📝','💻','📋','📈','🧪','💼','👥','💬','✅','❓'];
+
+const DEFAULT_CONFIG={
+  sessionTitle:'Q2 Retro — your phone at the end of the quarter',
+  apps:[
+    {id:'va',name:'Verification Automation',color:'#7F77DD',icon:'📊'},
+    {id:'tr',name:'Transfer Received States',color:'#1D9E75',icon:'📦'},
+    {id:'cc',name:'Country Change',color:'#D85A30',icon:'🌍'},
+    {id:'pw',name:'Procedure Writing',color:'#378ADD',icon:'📝'},
+    {id:'cd',name:'Coding / Building',color:'#639922',icon:'💻'},
+    {id:'cr',name:'Case Reviews',color:'#BA7517',icon:'📋'},
+    {id:'dg',name:'Data Gathering',color:'#D4537E',icon:'📈'},
+    {id:'ex',name:'Experimentation',color:'#E24B4A',icon:'🧪'},
+    {id:'pm',name:'Project Meetings',color:'#185FA5',icon:'💼'},
+    {id:'sd',name:'Standup',color:'#0F6E56',icon:'👥'},
+    {id:'cm',name:'Slack / Comms',color:'#993C1D',icon:'💬'},
+    {id:'rv',name:'Reviews & Feedback',color:'#534AB7',icon:'✅'},
+    {id:'up',name:'?? Unclear Priority',color:'#888780',icon:'❓'},
+  ],
+  maxDrainApps:3,
+  maxChargeStickies:2,
+  maxBgProcesses:3,
+  maxMuteNotifications:5,
+  participants:[
+    {name:'Tosan',avatar:''},
+    {name:'Dávid',avatar:''},
+    {name:'Charlotte',avatar:''},
+    {name:'Balázs',avatar:''},
+    {name:'Mani',avatar:''}
+  ],
+};
+
+const slug=s=>s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+// Unified storage layer - Firebase with localStorage fallback
+async function gs(key,shared=false){
+  try{
+    if(db){
+      // Use Firebase
+      const docRef=db.collection('battery-check').doc(key);
+      const doc=await docRef.get();
+      if(doc.exists){
+        return doc.data().value;
+      }
+      return null;
+    }else{
+      // Fallback to localStorage
+      const val=localStorage.getItem(key);
+      return val?JSON.parse(val):null;
+    }
+  }catch(e){
+    console.error('Get storage error:',e);
+    // Try localStorage fallback
+    const val=localStorage.getItem(key);
+    return val?JSON.parse(val):null;
+  }
+}
+
+async function ss(key,val,shared=false){
+  try{
+    if(db){
+      // Use Firebase
+      const docRef=db.collection('battery-check').doc(key);
+      if(val===null){
+        // Delete document
+        await docRef.delete();
+      }else{
+        await docRef.set({
+          value:val,
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+        },{merge:true});
+      }
+      return true;
+    }else{
+      // Fallback to localStorage
+      if(val===null){
+        localStorage.removeItem(key);
+      }else{
+        localStorage.setItem(key,JSON.stringify(val));
+      }
+      return true;
+    }
+  }catch(e){
+    console.error('Set storage error:',e);
+    // Try localStorage fallback
+    if(val===null){
+      localStorage.removeItem(key);
+    }else{
+      localStorage.setItem(key,JSON.stringify(val));
+    }
+    return false;
+  }
+}
+
+let STATE={screen:'sessions',participant:null,config:DEFAULT_CONFIG,allData:{},loading:true,currentSessionId:null,sessions:[]};
+
+async function init(){
+  // Load all sessions
+  const sessionsList=await gs('retro-sessions-list',true)||[];
+  STATE.sessions=sessionsList;
+
+  // If we have a current session, load it
+  if(sessionsList.length>0){
+    const lastSessionId=sessionsList[sessionsList.length-1].id;
+    STATE.currentSessionId=lastSessionId;
+    const cfg=await gs(`retro-session-${lastSessionId}`,true);
+    if(cfg)STATE.config=cfg;
+    await refreshData();
+  }
+
+  STATE.loading=false;
+  render();
+}
+
+async function refreshData(){
+  for(const p of STATE.config.participants){
+    const name=typeof p==='string'?p:p.name;
+    const key=`retro-${STATE.currentSessionId}-p-${slug(name)}`;
+    STATE.allData[name]=await gs(key,true);
+  }
+}
+
+async function render(){
+  const root=document.getElementById('root');
+  if(STATE.loading){
+    root.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;"><div style="text-align:center;"><div style="display:inline-block;width:48px;height:48px;border:3px solid var(--wise-border-neutral);border-top-color:var(--wise-content-primary);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:var(--space-16);"></div><p style="color:var(--wise-content-primary);font-weight:600;">Loading...</p></div></div><style>@keyframes spin{to{transform:rotate(360deg);}}</style>`;
+    return;
+  }
+  if(STATE.screen==='sessions')await renderSessions();
+  else if(STATE.screen==='landing')renderLanding();
+  else if(STATE.screen==='fill')renderFill();
+  else if(STATE.screen==='done')renderDone();
+  else if(STATE.screen==='edit')renderEdit();
+  else if(STATE.screen==='overview')renderOverview();
+}
+
+async function go(screen,extra={}){
+  // If leaving fill screen, save draft for current participant
+  if(STATE.screen==='fill'&&screen!=='fill'&&STATE.participant){
+    saveFillDraft();
+  }
+
+  // If entering fill screen for a different participant, reload their data from storage
+  if(screen==='fill'&&extra.participant&&extra.participant!==STATE.participant){
+    const newParticipant=extra.participant;
+    const key=`retro-${STATE.currentSessionId}-p-${slug(newParticipant)}`;
+    const data=await gs(key,true);
+    console.log(`Reloading ${newParticipant} from storage:`,data);
+    if(data){
+      STATE.allData[newParticipant]=data;
+    }else{
+      delete STATE.allData[newParticipant];
+    }
+  }
+
+  STATE={...STATE,screen,...extra};
+  render();
+}
+
+function saveFillDraft(){
+  // Save current form state as draft (not submitted)
+  if(!STATE.participant||!STATE.currentSessionId)return;
+
+  // Only save draft if not submitted
+  if(FILL.isSubmitted)return;
+
+  const draftKey=`retro-${STATE.currentSessionId}-draft-${slug(STATE.participant)}`;
+  const draftData={
+    battery:FILL.battery,
+    slots:JSON.parse(JSON.stringify(FILL.slots)), // Deep clone
+    charges:[...FILL.charges],
+    bgProcs:[...FILL.bgProcs],
+    oneUpdate:FILL.oneUpdate,
+    muteNotifs:[...FILL.muteNotifs],
+    currentDevice:FILL.currentDevice
+  };
+  console.log(`Saving draft for ${STATE.participant}:`,draftKey,draftData);
+  localStorage.setItem(draftKey,JSON.stringify(draftData));
+}
+
+function loadFillDraft(){
+  if(!STATE.participant||!STATE.currentSessionId)return null;
+
+  // Don't load draft if already submitted
+  const submittedKey=`retro-${STATE.currentSessionId}-p-${slug(STATE.participant)}`;
+  const submittedData=localStorage.getItem(submittedKey);
+  if(submittedData){
+    console.log(`${STATE.participant} has submitted data, ignoring draft`);
+    return null; // Don't load draft over submitted data
+  }
+
+  const draftKey=`retro-${STATE.currentSessionId}-draft-${slug(STATE.participant)}`;
+  const draft=localStorage.getItem(draftKey);
+  console.log(`Loading draft for ${STATE.participant}:`,draft?'Found':'None');
+  return draft?JSON.parse(draft):null;
+}
+
+function showModal({title,label,placeholder,confirmText,onConfirm,isConfirmation}){
+  MODAL_STATE={title,label,placeholder,confirmText,onConfirm,isConfirmation};
+  renderModal();
+}
+
+function closeModal(){
+  MODAL_STATE=null;
+  const modal=document.getElementById('custom-modal');
+  if(modal)modal.remove();
+}
+
+function renderModal(){
+  if(!MODAL_STATE)return;
+
+  const existing=document.getElementById('custom-modal');
+  if(existing)existing.remove();
+
+  const modal=document.createElement('div');
+  modal.id='custom-modal';
+  modal.className='custom-modal';
+
+  // Confirmation modal (no input)
+  if(MODAL_STATE.isConfirmation){
+    modal.innerHTML=`
+      <div class="custom-modal-content" onclick="event.stopPropagation()">
+        <h2 style="font-size:24px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-16);">${MODAL_STATE.title}</h2>
+        <p style="font-size:16px;line-height:24px;color:var(--wise-content-secondary);margin-bottom:var(--space-32);">${MODAL_STATE.label}</p>
+        <div style="display:flex;gap:var(--space-12);justify-content:flex-end;">
+          <button onclick="closeModal()" style="padding:var(--space-12) var(--space-24);background:transparent;border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;color:var(--wise-content-primary);transition:all 0.2s;" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='transparent';">
+            Cancel
+          </button>
+          <button onclick="confirmModal()" style="padding:var(--space-12) var(--space-24);background:var(--wise-sentiment-negative);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+            ${MODAL_STATE.confirmText||'Confirm'}
+          </button>
+        </div>
+      </div>
+    `;
+  }else{
+    // Input modal
+    modal.innerHTML=`
+      <div class="custom-modal-content" onclick="event.stopPropagation()">
+        <h2 style="font-size:24px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-24);">${MODAL_STATE.title}</h2>
+        <label style="display:block;font-size:14px;font-weight:600;color:var(--wise-content-secondary);margin-bottom:var(--space-8);">${MODAL_STATE.label}</label>
+        <input id="modal-input" type="text" placeholder="${MODAL_STATE.placeholder||''}" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:16px;color:var(--wise-content-primary);margin-bottom:var(--space-24);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';" onkeydown="if(event.key==='Enter')confirmModal()">
+        <div style="display:flex;gap:var(--space-12);justify-content:flex-end;">
+          <button onclick="closeModal()" style="padding:var(--space-12) var(--space-24);background:transparent;border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;color:var(--wise-content-primary);transition:all 0.2s;" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='transparent';">
+            Cancel
+          </button>
+          <button onclick="confirmModal()" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+            ${MODAL_STATE.confirmText||'Confirm'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  modal.onclick=(e)=>{
+    if(e.target===modal)closeModal();
+  };
+
+  document.body.appendChild(modal);
+  if(!MODAL_STATE.isConfirmation){
+    setTimeout(()=>document.getElementById('modal-input')?.focus(),100);
+  }
+}
+
+function confirmModal(){
+  if(MODAL_STATE?.isConfirmation){
+    // Confirmation modal - no input required
+    if(MODAL_STATE?.onConfirm){
+      MODAL_STATE.onConfirm();
+    }
+    closeModal();
+  }else{
+    // Input modal
+    const input=document.getElementById('modal-input');
+    if(!input)return;
+
+    const value=input.value.trim();
+    if(value&&MODAL_STATE?.onConfirm){
+      MODAL_STATE.onConfirm(value);
+    }
+    closeModal();
+  }
+}
+
+async function renderSessions(){
+  // Reload sessions from storage to ensure fresh data
+  const sessionsList=await gs('retro-sessions-list',true)||[];
+  STATE.sessions=sessionsList;
+  const sessions=STATE.sessions||[];
+
+  const sessionCards=sessions.map(s=>{
+    const date=new Date(s.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const participantCount=Array.isArray(s.participants)?s.participants.length:0;
+    return `<button onclick="loadSession('${s.id}')" style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);transition:all 0.2s;cursor:pointer;text-align:left;width:100%;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+      <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-4);">${s.title}</h3>
+      <p style="font-size:14px;color:var(--wise-content-secondary);margin-bottom:var(--space-8);">${participantCount} participants</p>
+      <p style="font-size:12px;color:var(--wise-content-tertiary);">Created ${date}</p>
+    </button>`;
+  }).join('');
+
+  document.getElementById('root').innerHTML=`
+  <div style="max-width:1200px;margin:0 auto;padding:var(--space-48) var(--space-24);" class="fade-in">
+    <!-- Hero Header -->
+    <div style="text-align:center;margin-bottom:var(--space-48);padding:var(--space-48) 0;">
+      <div style="margin-bottom:var(--space-16);">
+        <img src="https://wise.com/web-art/assets/illustrations/heart-2-large@2x.webp" alt="Heart" style="width:80px;height:80px;display:inline-block;">
+      </div>
+      <h1 style="font-size:48px;font-weight:700;margin-bottom:var(--space-16);color:var(--wise-content-primary);">Battery Check</h1>
+      <p style="font-size:18px;line-height:28px;color:var(--wise-content-secondary);max-width:600px;margin:0 auto;">Honest retrospectives using the phone battery metaphor. How charged is your team?</p>
+    </div>
+
+    <!-- Create Session Button -->
+    <div style="margin-bottom:var(--space-48);text-align:center;">
+      <button onclick="createNewSession()" style="padding:var(--space-16) var(--space-32);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:inline-flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Create New Session
+      </button>
+    </div>
+
+    <!-- Sessions List -->
+    ${sessions.length?`
+      <div>
+        <h2 style="font-size:24px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-24);">Saved Sessions</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-16);">
+          ${sessionCards}
+        </div>
+      </div>
+    `:`
+      <div style="text-align:center;padding:var(--space-48) 0;">
+        <p style="font-size:16px;color:var(--wise-content-secondary);">No sessions yet. Create your first retrospective session!</p>
+      </div>
+    `}
+  </div>`;
+}
+
+function createNewSession(){
+  showModal({
+    title:'Create New Session',
+    label:'Session name',
+    placeholder:'e.g., "Q2 2024 Retro"',
+    confirmText:'Create',
+    onConfirm:async(value)=>{
+      if(!value.trim())return;
+
+      const sessionId='session-'+Date.now();
+      const newSession={
+        id:sessionId,
+        title:value.trim(),
+        createdAt:new Date().toISOString(),
+        participants:DEFAULT_CONFIG.participants
+      };
+
+      STATE.sessions.push(newSession);
+      console.log('Saving sessions list:',STATE.sessions);
+      await ss('retro-sessions-list',STATE.sessions,true);
+
+      const newConfig={...DEFAULT_CONFIG,sessionTitle:value.trim()};
+      console.log('Saving session config:',sessionId,newConfig);
+      await ss(`retro-session-${sessionId}`,newConfig,true);
+
+      STATE.currentSessionId=sessionId;
+      STATE.config=newConfig;
+      STATE.allData={};
+      await refreshData();
+      go('edit');
+    }
+  });
+}
+
+async function loadSession(sessionId){
+  console.log('Loading session:',sessionId);
+  STATE.loading=true;
+  render();
+
+  STATE.currentSessionId=sessionId;
+  STATE.allData={}; // Reset data
+
+  const cfg=await gs(`retro-session-${sessionId}`,true);
+  console.log('Loaded config:',cfg);
+
+  if(cfg){
+    STATE.config=cfg;
+    await refreshData();
+    STATE.loading=false;
+    go('landing');
+  }else{
+    console.error('Session not found:',sessionId);
+    alert(`Session not found: ${sessionId}`);
+    STATE.loading=false;
+    go('sessions');
+  }
+}
+
+function renderLanding(){
+  const{config,allData}=STATE;
+  const participants=config.participants.map(p=>typeof p==='string'?{name:p,avatar:''}:p);
+  const submitted=participants.filter(p=>allData[p.name]).length;
+  const cards=participants.map(p=>{
+    const name=p.name;
+    const avatar=p.avatar||'';
+    const colors=getAvatarColor(name);
+    const done=!!allData[name];
+    return `<button onclick="go('fill',{participant:'${name}'})" style="background:${done?'var(--wise-background-neutral)':'var(--wise-background-screen)'};border:2px solid ${done?'var(--wise-sentiment-positive)':'var(--wise-border-neutral)'};border-radius:var(--radius-medium);padding:var(--space-24);transition:all 0.2s;cursor:pointer;text-align:left;width:100%;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='';" class="fade-in">
+      <div style="display:flex;align-items:center;gap:var(--space-12);margin-bottom:var(--space-12);">
+        ${avatar?`<img src="${avatar}" style="width:48px;height:48px;border-radius:12px;object-fit:cover;flex-shrink:0;">`:`<div style="width:48px;height:48px;border-radius:12px;background:${colors.bg};color:${colors.text};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;">${name.charAt(0)}</div>`}
+        <div style="flex:1;min-width:0;">
+          <h3 style="font-size:18px;font-weight:600;color:${done?'var(--wise-sentiment-positive)':'var(--wise-content-primary)'};">${name}</h3>
+          <p style="font-size:14px;color:${done?'var(--wise-sentiment-positive)':'var(--wise-content-secondary)'};">${done?'✓ Submitted':'Tap to fill in'}</p>
+        </div>
+        ${done?'<svg style="width:24px;height:24px;color:var(--wise-sentiment-positive);flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>':''}
+      </div>
+    </button>`;
+  }).join('');
+
+  document.getElementById('root').innerHTML=`
+  <div style="max-width:1200px;margin:0 auto;padding:var(--space-48) var(--space-24);" class="fade-in">
+    <div style="margin-bottom:var(--space-24);">
+      <button onclick="go('sessions')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);display:inline-flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        All Sessions
+      </button>
+    </div>
+    <div style="text-align:center;margin-bottom:var(--space-48);">
+      <div style="display:inline-flex;align-items:center;gap:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:24px;padding:var(--space-8) var(--space-16);margin-bottom:var(--space-16);">
+        <svg style="width:20px;height:20px;color:var(--wise-content-primary);" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path></svg>
+        <span style="font-size:14px;font-weight:600;color:var(--wise-content-primary);text-transform:uppercase;letter-spacing:0.05em;">Battery Check</span>
+      </div>
+      <h1 style="font-size:40px;font-weight:700;margin-bottom:var(--space-16);color:var(--wise-content-primary);">${config.sessionTitle}</h1>
+      <p style="font-size:16px;line-height:24px;color:var(--wise-content-secondary);max-width:700px;margin:0 auto;">Select your name and fill in your phone honestly to share your energy levels and experiences from this quarter.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-16);margin-bottom:var(--space-32);">
+      ${cards}
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:var(--space-12);justify-content:center;">
+      <button onclick="go('overview')" style="padding:var(--space-12) var(--space-24);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;transition:all 0.2s;cursor:pointer;display:flex;align-items:center;gap:var(--space-8);color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        View responses (${submitted}/${participants.length})
+      </button>
+      <button onclick="go('edit')" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;transition:all 0.2s;cursor:pointer;display:flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.opacity='0.9';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.boxShadow='';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        Edit session
+      </button>
+    </div>
+  </div>`;
+}
+
+let FILL={battery:65,slots:[],charges:[],bgProcs:[],oneUpdate:'',muteNotifs:[],picker:null,errors:[],currentDevice:1,hasChanges:false,isSubmitted:false,originalData:null,lastParticipant:null};
+let MODAL_STATE=null;
+
+const WISE_AVATAR_COLORS=[
+  {bg:'#9FE870',text:'#163300'},  // Bright green
+  {bg:'#FFD7EF',text:'#320707'},  // Pink
+  {bg:'#FFC091',text:'#260A2F'},  // Peach
+  {bg:'#FFEB69',text:'#3A341C'},  // Yellow
+  {bg:'#A0E1E1',text:'#21231D'}   // Teal
+];
+
+function getAvatarColor(name){
+  const index=name.split('').reduce((acc,char)=>acc+char.charCodeAt(0),0)%WISE_AVATAR_COLORS.length;
+  return WISE_AVATAR_COLORS[index];
+}
+
+function initFill(){
+  const{config,participant,allData}=STATE;
+
+  if(!participant||!STATE.currentSessionId){
+    console.error('initFill called without participant or session');
+    return;
+  }
+
+  const existingData=allData[participant];
+  const draft=loadFillDraft();
+
+  console.log(`initFill for ${participant}:`,{existingData,draft});
+
+  if(existingData){
+    // Load existing submission
+    FILL={
+      battery:existingData.battery,
+      slots:Array(config.maxDrainApps).fill(null).map((_, i)=>{
+        const drain=existingData.drainApps[i];
+        return drain?{appId:drain.appId,pct:drain.pct}:{appId:'',pct:0};
+      }),
+      charges:[...existingData.charges],
+      bgProcs:[...existingData.bgProcs],
+      muteNotifs:existingData.muteNotifs?[...existingData.muteNotifs]:['',''],
+      oneUpdate:existingData.oneUpdate||'',
+      picker:null,
+      errors:[],
+      currentDevice:1,
+      hasChanges:false,
+      isSubmitted:true,
+      originalData:JSON.parse(JSON.stringify(existingData)),
+      lastParticipant:participant
+    };
+  }else if(draft){
+    // Load draft (work in progress)
+    FILL={
+      battery:draft.battery,
+      slots:JSON.parse(JSON.stringify(draft.slots)), // Deep clone
+      charges:[...draft.charges],
+      bgProcs:[...draft.bgProcs],
+      muteNotifs:[...draft.muteNotifs],
+      oneUpdate:draft.oneUpdate,
+      picker:null,
+      errors:[],
+      currentDevice:draft.currentDevice||1,
+      hasChanges:false,
+      isSubmitted:false,
+      originalData:null,
+      lastParticipant:participant
+    };
+  }else{
+    // New submission
+    FILL={
+      battery:65,
+      slots:Array(config.maxDrainApps).fill(null).map(()=>({appId:'',pct:0})),
+      charges:Array(config.maxChargeStickies).fill(''),
+      bgProcs:Array(config.maxBgProcesses).fill(''),
+      muteNotifs:['',''],
+      oneUpdate:'',
+      picker:null,
+      errors:[],
+      currentDevice:1,
+      hasChanges:false,
+      isSubmitted:false,
+      originalData:null,
+      lastParticipant:participant
+    };
+  }
+}
+
+function markChanged(){
+  if(FILL.isSubmitted){
+    FILL.hasChanges=true;
+    // Update button state without full re-render
+    updateSubmitButton();
+  }
+}
+
+function updateSubmitButton(){
+  const submitBtn=document.querySelector('[onclick="submitFill()"]');
+  if(submitBtn&&FILL.isSubmitted){
+    if(FILL.hasChanges){
+      submitBtn.disabled=false;
+      submitBtn.style.background='var(--wise-content-primary)';
+      submitBtn.style.color='white';
+      submitBtn.style.border='none';
+      submitBtn.style.cursor='pointer';
+      submitBtn.onmouseover=function(){
+        this.style.opacity='0.9';
+        this.style.transform='translateY(-2px)';
+        this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';
+      };
+      submitBtn.onmouseout=function(){
+        this.style.opacity='1';
+        this.style.transform='';
+        this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';
+      };
+    }else{
+      submitBtn.disabled=true;
+      submitBtn.style.background='var(--wise-background-neutral)';
+      submitBtn.style.color='var(--wise-content-tertiary)';
+      submitBtn.style.border='1px solid var(--wise-border-neutral)';
+      submitBtn.style.cursor='not-allowed';
+      submitBtn.onmouseover=null;
+      submitBtn.onmouseout=null;
+    }
+  }
+}
+
+function renderFill(){
+  // Always re-initialize when participant changes to ensure clean slate
+  const lastParticipant=FILL.lastParticipant;
+  if(!FILL.slots.length||FILL.slots.length!==STATE.config.maxDrainApps||lastParticipant!==STATE.participant){
+    initFill();
+    FILL.lastParticipant=STATE.participant;
+  }
+  const{config,participant}=STATE;
+  const participantData=config.participants.find(p=>(typeof p==='string'?p:p.name)===participant);
+  const avatar=typeof participantData==='string'?'':participantData?.avatar||'';
+  const{battery,slots,charges,bgProcs,oneUpdate,muteNotifs,picker,errors,currentDevice,hasChanges,isSubmitted}=FILL;
+  const total=slots.reduce((s,a)=>s+(parseInt(a.pct)||0),0);
+  const remaining=100-total;
+  const selectedIds=slots.map(s=>s.appId).filter(Boolean);
+
+  const batteryColor=battery>50?'#00c84f':battery>20?'#ffa500':'#ff4444';
+  const remainingClass=remaining===0?'text-emerald-400':remaining<0?'text-red-400':'text-gray-400';
+  const remainingLabel=remaining===0?'✓ 100%':remaining>0?`${remaining}% left`:`${Math.abs(remaining)}% over`;
+
+  // Device 1: Battery/Energy
+  const slotRows=slots.map((slot,i)=>{
+    const app=config.apps.find(a=>a.id===slot.appId);
+    const pct=parseInt(slot.pct)||0;
+
+    return `<div class="app-card">
+      ${app?`<div class="app-icon" style="background:${app.color}" onclick="openPicker(${i})">${app.icon}</div>`:`
+        <button onclick="openPicker(${i})" class="w-14 h-14 rounded-2xl bg-gray-800 border-2 border-dashed border-gray-700 flex items-center justify-center text-gray-600 text-2xl flex-shrink-0 hover:border-gray-600 transition-all">
+          +
+        </button>`}
+      <div class="slider-container">
+        <div class="text-sm font-medium text-gray-300 mb-2">${app?app.name:'Tap to select app'}</div>
+        <div class="slider-track">
+          <div class="slider-fill" id="slider-fill-${i}" style="width:${pct}%;background:${app?app.color:'#444'}"></div>
+          ${app?`<input id="slider-input-${i}" type="range" min="0" max="100" value="${pct}" oninput="updateSlider(${i},this.value,event)" class="slider-input">
+          <div class="slider-knob" id="knob-${i}" style="left:${pct}%"></div>`:``}
+        </div>
+      </div>
+      <input id="pct-input-${i}" type="number" min="0" max="100" value="${pct}"
+        oninput="updatePctInput(${i},this.value)"
+        onblur="validatePct(${i},this)"
+        class="percentage-input">
+    </div>`;
+  }).join('');
+
+  const bgInputs=bgProcs.map((b,i)=>`<div class="bg-process-item">
+    <span class="text-gray-600 mt-2">•</span>
+    <textarea oninput="updateBg(${i},this)" placeholder="Background app ${i+1}..." class="bg-process-input" rows="1">${b}</textarea>
+  </div>`).join('');
+
+  const chargeInputs=charges.map((c,i)=>`<textarea oninput="updateCharge(${i},this)" placeholder="Something that kept you going..." class="charger-input">${c}</textarea>`).join('');
+
+  // Device 2: Mute notifications
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false});
+  const dateStr=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  const notificationCards=muteNotifs.map((notif,i)=>`
+    <div class="notification-card">
+      <div class="notification-header">
+        <div class="notification-icon">🔔</div>
+        <div class="notification-app">Notification ${i+1}</div>
+        <div class="notification-time">now</div>
+      </div>
+      <textarea
+        class="notification-input"
+        placeholder="What recurring thing created noise or interrupted your focus?"
+        oninput="updateMuteNotif(${i},this)"
+        rows="1">${notif}</textarea>
+      <button class="notification-delete" onclick="removeMuteNotif(${i})">✕</button>
+    </div>
+  `).join('');
+
+  const canAddMore=muteNotifs.length<config.maxMuteNotifications;
+
+  const errHtml=errors.length?`<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-4 fade-in">${errors.map(e=>`<p class="text-xs text-red-400 mb-1 last:mb-0">• ${e}</p>`).join('')}</div>`:'';
+
+  const balBtn=selectedIds.length>0&&remaining!==0?`<button onclick="distributeEvenly()" class="text-xs px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg mt-3 transition-all text-gray-400">↻ Distribute evenly</button>`:'';
+
+  const pickerHtml=picker!==null?`<div class="picker-modal" onclick="if(event.target===this)closePicker()">
+    <div class="picker-content fade-in">
+      <h3 class="text-lg font-semibold text-white mb-2">Select App</h3>
+      <p class="text-sm text-gray-400">Choose which app drained your battery</p>
+      <div class="picker-grid">
+        ${config.apps.filter(a=>!selectedIds.includes(a.id)||a.id===slots[picker].appId).map(a=>`
+          <button onclick="pickApp(${picker},'${a.id}')" class="picker-option ${slots[picker].appId===a.id?'selected':''}">
+            <div class="app-icon" style="background:${a.color};width:40px;height:40px;font-size:20px;border-radius:10px">${a.icon}</div>
+            <span class="text-sm text-gray-300 flex-1 text-left">${a.name}</span>
+          </button>`).join('')}
+        <button onclick="showAddNewApp()" class="add-new-option">
+          <span style="font-size:20px">+</span>
+          <span>Add New</span>
+        </button>
+      </div>
+      <button onclick="closePicker()" class="w-full mt-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-medium transition-all">Close</button>
+    </div>
+  </div>`:'';
+
+  document.getElementById('root').innerHTML=`
+  <div style="max-width:1400px;margin:0 auto;padding:var(--space-32) var(--space-24) var(--space-48);" class="fade-in">
+    <div style="display:flex;align-items:center;gap:var(--space-16);margin-bottom:var(--space-24);">
+      <button onclick="go('landing')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-screen);this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.background='var(--wise-background-screen);this.style.boxShadow='';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      </button>
+      <div>
+        <p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Your Phone</p>
+        <p style="font-size:24px;font-weight:700;color:var(--wise-content-primary);margin:0;">${participant}</p>
+      </div>
+    </div>
+
+    <div class="devices-container">
+      <!-- Participant Avatar -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        ${avatar?`<img src="${avatar}" class="participant-avatar" alt="${participant}">`:(()=>{const colors=getAvatarColor(participant);return `<div class="participant-avatar-placeholder" style="background:${colors.bg};color:${colors.text};">${participant.charAt(0)}</div>`;})()}
+        <p style="font-size:14px;font-weight:600;color:var(--wise-content-primary);margin:0;">${participant}</p>
+      </div>
+
+      <!-- Phone with Tabs -->
+      <div class="device-wrapper" style="display:flex;flex-direction:column;gap:16px;">
+        <!-- Segmented Control Navigation -->
+        <div style="display:flex;justify-content:center;">
+          <div class="segmented-control">
+            <div class="segmented-control-indicator" style="width:80px;transform:translateX(${(currentDevice-1)*84}px);"></div>
+            <button onclick="switchDevice(1)" class="segmented-control-btn ${currentDevice===1?'active':''}">Energy</button>
+            <button onclick="switchDevice(2)" class="segmented-control-btn ${currentDevice===2?'active':''}">Mute</button>
+            <button onclick="switchDevice(3)" class="segmented-control-btn ${currentDevice===3?'active':''}">Focus</button>
+          </div>
+        </div>
+
+        <div class="devices-stack">
+        <!-- Device 1: Energy/Battery -->
+        <div class="phone-device ${currentDevice===1?'device-visible':'device-hidden'}" data-device="1">
+        <div class="dynamic-island">
+          <div class="camera-dot"></div>
+        </div>
+        <div class="phone-screen">
+          <!-- Status Bar -->
+          <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:600;">
+            <span id="status-time-1">9:41</span>
+          </div>
+
+          <div class="phone-content">
+            <div style="margin-bottom:16px;">
+              <h2 style="font-size:28px;font-weight:700;margin:0;line-height:1.2;">Energy level</h2>
+              <p style="font-size:13px;color:rgba(255,255,255,0.6);margin:4px 0 0;">End of Q2</p>
+            </div>
+
+            <div class="large-battery" style="margin-bottom:24px;">
+              <div class="battery-fill-large" id="battery-fill" style="width:${battery}%;background:${batteryColor}"></div>
+              <div class="battery-percentage" id="battery-pct">${battery}%</div>
+              <input type="range" min="0" max="100" value="${battery}"
+                oninput="updateBatterySlider(this.value)"
+                class="battery-slider">
+              <div class="battery-knob" id="battery-knob" style="left:${battery}%"></div>
+            </div>
+
+            <div style="margin-bottom:24px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h3 style="font-size:15px;font-weight:600;color:white;margin:0;">Battery usage by app</h3>
+                <span id="battery-remaining" class="${remainingClass} text-sm font-semibold">${remainingLabel}</span>
+              </div>
+              <p style="font-size:12px;color:rgba(255,255,255,0.6);margin:0 0 12px;line-height:1.5;">What took the most out of you this quarter?</p>
+              ${slotRows}
+              ${balBtn}
+            </div>
+
+            <div class="charger-section" style="margin-bottom:16px;">
+              <h3 style="font-size:15px;font-weight:600;color:#ffd700;margin:0 0 12px;">⚡ What charged you</h3>
+              ${chargeInputs}
+            </div>
+
+            <div style="background:#1f1f1f;border-radius:16px;padding:16px;margin-bottom:16px;">
+              <h3 style="font-size:15px;font-weight:600;color:white;margin:0 0 8px;">Background apps</h3>
+              <p style="font-size:12px;color:rgba(255,255,255,0.6);margin:0 0 12px;line-height:1.5;">Apps running silently — what's been draining you that's not visibly noticed?</p>
+              ${bgInputs}
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Device 2: Mute Notifications -->
+        <div class="phone-device ${currentDevice===2?'device-visible':'device-hidden'}" data-device="2">
+        <div class="dynamic-island">
+          <div class="camera-dot"></div>
+        </div>
+        <div class="phone-screen">
+          <div class="lock-screen">
+            <!-- Lock Screen Status Bar -->
+            <div class="lock-status-bar">
+              <span id="status-time-2">9:41</span>
+            </div>
+            <div class="lock-time">
+              <div class="lock-time-hours">${timeStr}</div>
+            </div>
+            <div class="lock-date">${dateStr}</div>
+
+            <div style="max-height:500px;overflow-y:auto;">
+              <h3 style="font-size:14px;font-weight:600;color:white !important;margin:0 0 16px;text-align:center;">
+                What would you mute?
+              </h3>
+              <p style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin:0 0 20px;text-align:center;line-height:1.5;">
+                Recurring things that created noise, pressure, or interrupted your focus
+              </p>
+
+              ${notificationCards}
+
+              ${canAddMore?`<button onclick="addMuteNotif()" class="add-notification-btn">
+                <span style="font-size:20px;margin-right:8px;">+</span>
+                Add notification to mute
+              </button>`:''}
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Device 3: Focus/Q3 Improvements -->
+        <div class="phone-device ${currentDevice===3?'device-visible':'device-hidden'}" data-device="3">
+        <div class="dynamic-island">
+          <div class="camera-dot"></div>
+        </div>
+        <div class="phone-screen">
+          <!-- Status Bar -->
+          <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:600;">
+            <span id="status-time-3">9:41</span>
+          </div>
+
+          <div class="phone-content">
+            <div style="text-align:center;margin-bottom:24px;padding-top:40px;">
+              <div style="font-size:64px;margin-bottom:16px;">🎯</div>
+              <h2 style="font-size:28px;font-weight:700;margin:0 0 8px;line-height:1.2;">Next Quarter Focus</h2>
+              <p style="font-size:13px;color:rgba(255,255,255,0.6);margin:0;">Improvements for Q3</p>
+            </div>
+
+            <div style="background:rgba(181,212,244,0.1);border-radius:20px;padding:20px;border:1px solid rgba(181,212,244,0.2);">
+              <h3 style="font-size:15px;font-weight:600;color:#b5d4f4;margin:0 0 8px;">📱 One update for Q3</h3>
+              <p style="font-size:12px;color:rgba(255,255,255,0.6);margin:0 0 16px;line-height:1.5;">If you were to bring improvements to the next model...</p>
+              <textarea oninput="updateUpdate(this.value)" placeholder="What should the team prioritize to make next quarter better?" class="update-input" style="min-height:120px;">${oneUpdate}</textarea>
+            </div>
+          </div>
+        </div>
+        </div>
+        </div>
+
+        ${errHtml}
+
+        ${isSubmitted?`
+          <!-- Already submitted - show update/undo options -->
+          <div style="display:flex;gap:var(--space-12);">
+            <button onclick="submitFill()" ${!hasChanges?'disabled':''} style="flex:1;padding:var(--space-16) var(--space-32);background:${hasChanges?'var(--wise-content-primary)':'var(--wise-background-neutral)'};color:${hasChanges?'white':'var(--wise-content-tertiary)'};border:${hasChanges?'none':'1px solid var(--wise-border-neutral)'};border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:${hasChanges?'pointer':'not-allowed'};transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" ${hasChanges?`onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';"`:''}">
+              Update
+            </button>
+            <button onclick="undoSubmission()" style="padding:var(--space-16) var(--space-24);background:transparent;color:var(--wise-sentiment-negative);border:1px solid var(--wise-sentiment-negative);border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.background='var(--wise-sentiment-negative)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--wise-sentiment-negative)';">
+              Undo submission
+            </button>
+          </div>
+        `:`
+          <!-- Not submitted - show submit button with reset -->
+          <div style="display:flex;gap:var(--space-12);align-items:center;">
+            <button onclick="submitFill()" style="flex:1;padding:var(--space-16) var(--space-32);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+              Submit my phones →
+            </button>
+            <button onclick="resetForm()" style="padding:var(--space-16);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.borderColor='var(--wise-content-primary)';this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.borderColor='var(--wise-border-neutral)';this.style.background='var(--wise-background-screen)';" title="Reset form">
+              <svg style="width:20px;height:20px;color:var(--wise-content-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+          </div>
+        `}
+      </div>
+    </div>
+  </div>
+  ${pickerHtml}`;
+
+  // Auto-resize textareas
+  setTimeout(()=>{
+    document.querySelectorAll('.bg-process-input, .notification-input, .charger-input').forEach(el=>{
+      el.style.height='auto';
+      el.style.height=el.scrollHeight+'px';
+    });
+
+    // Update status bar times
+    const time=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false});
+    const timeEl1=document.getElementById('status-time-1');
+    const timeEl2=document.getElementById('status-time-2');
+    const timeEl3=document.getElementById('status-time-3');
+    if(timeEl1)timeEl1.textContent=time;
+    if(timeEl2)timeEl2.textContent=time;
+    if(timeEl3)timeEl3.textContent=time;
+
+    // Initialize swipe listeners
+    initSwipeListeners();
+
+    // Auto-hide scrollbar after scrolling stops
+    const phoneContents=document.querySelectorAll('.phone-content');
+    phoneContents.forEach(content=>{
+      let scrollTimer;
+      content.addEventListener('scroll',()=>{
+        content.classList.add('scrolling');
+        clearTimeout(scrollTimer);
+        scrollTimer=setTimeout(()=>{
+          content.classList.remove('scrolling');
+        },1000);
+      });
+    });
+  },0);
+}
+
+function switchDevice(deviceNum){
+  if(FILL.currentDevice===deviceNum)return;
+
+  FILL.currentDevice=deviceNum;
+
+  // Update segmented control
+  const buttons=document.querySelectorAll('.segmented-control-btn');
+  const indicator=document.querySelector('.segmented-control-indicator');
+
+  buttons.forEach((btn,idx)=>{
+    if(idx+1===deviceNum){
+      btn.classList.add('active');
+      if(indicator){
+        const btnWidth=btn.offsetWidth;
+        const btnLeft=btn.offsetLeft;
+        indicator.style.width=btnWidth+'px';
+        indicator.style.transform=`translateX(${btnLeft}px)`;
+      }
+    }else{
+      btn.classList.remove('active');
+    }
+  });
+
+  // Simple fade transition - devices stay in place
+  const devices=document.querySelectorAll('.phone-device');
+  devices.forEach((device,idx)=>{
+    if(idx+1===deviceNum){
+      device.classList.remove('device-hidden');
+      device.classList.add('device-visible');
+    }else{
+      device.classList.remove('device-visible');
+      device.classList.add('device-hidden');
+    }
+  });
+}
+
+// Touch swipe support
+let touchStartX=0;
+let touchEndX=0;
+
+function handleSwipe(){
+  const swipeThreshold=50;
+  const diff=touchStartX-touchEndX;
+
+  if(Math.abs(diff)>swipeThreshold){
+    if(diff>0&&FILL.currentDevice<3){
+      // Swipe left - next device
+      switchDevice(FILL.currentDevice+1);
+    }else if(diff<0&&FILL.currentDevice>1){
+      // Swipe right - previous device
+      switchDevice(FILL.currentDevice-1);
+    }
+  }
+}
+
+function initSwipeListeners(){
+  const wrapper=document.querySelector('.device-wrapper');
+  if(!wrapper)return;
+
+  wrapper.addEventListener('touchstart',(e)=>{
+    touchStartX=e.changedTouches[0].screenX;
+  },{passive:true});
+
+  wrapper.addEventListener('touchend',(e)=>{
+    touchEndX=e.changedTouches[0].screenX;
+    handleSwipe();
+  },{passive:true});
+}
+
+function addMuteNotif(){
+  if(FILL.muteNotifs.length<STATE.config.maxMuteNotifications){
+    FILL.muteNotifs.push('');
+    markChanged();
+    renderFill();
+  }
+}
+
+function removeMuteNotif(i){
+  FILL.muteNotifs.splice(i,1);
+  markChanged();
+  renderFill();
+}
+
+function updateMuteNotif(i,el){
+  FILL.muteNotifs[i]=el.value;
+  markChanged();
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+}
+
+function openPicker(i){FILL.picker=i;renderFill();}
+function closePicker(){FILL.picker=null;renderFill();}
+function pickApp(i,appId){FILL.slots[i]={...FILL.slots[i],appId};markChanged();FILL.picker=null;renderFill();}
+
+function updateBatterySlider(v){
+  FILL.battery=parseInt(v);
+  markChanged();
+  const batteryColor=+v>50?'#00c84f':+v>20?'#ffa500':'#ff4444';
+  const fill=document.getElementById('battery-fill');
+  const pct=document.getElementById('battery-pct');
+  const knob=document.getElementById('battery-knob');
+
+  if(fill){
+    fill.style.width=v+'%';
+    fill.style.background=batteryColor;
+  }
+  if(pct){
+    pct.textContent=v+'%';
+  }
+  if(knob){
+    knob.style.left=v+'%';
+  }
+}
+
+function updateSlider(i,v,event){
+  event.stopPropagation();
+  const newVal=parseInt(v);
+  const oldVal=FILL.slots[i].pct;
+  const diff=newVal-oldVal;
+
+  FILL.slots[i].pct=newVal;
+  markChanged();
+
+  // Auto-adjust other sliders to ensure total doesn't exceed 100%
+  const filledSlots=FILL.slots.map((s,idx)=>({idx,s})).filter(x=>x.s.appId&&x.idx!==i);
+  if(diff!==0&&filledSlots.length>0){
+    const total=FILL.slots.reduce((sum,s)=>sum+(parseInt(s.pct)||0),0);
+    if(total>100){
+      const excess=total-100;
+      const adjustPerSlot=Math.floor(excess/filledSlots.length);
+      let remaining=excess-adjustPerSlot*filledSlots.length;
+
+      filledSlots.forEach((item,idx)=>{
+        const adjust=adjustPerSlot+(idx===0?remaining:0);
+        const newPct=Math.max(0,item.s.pct-adjust);
+        FILL.slots[item.idx].pct=newPct;
+      });
+
+      // Double-check we didn't exceed 100% after adjustment
+      const finalTotal=FILL.slots.reduce((sum,s)=>sum+(parseInt(s.pct)||0),0);
+      if(finalTotal>100){
+        // If still over, reduce the current slider
+        FILL.slots[i].pct=Math.max(0,newVal-(finalTotal-100));
+      }
+    }
+  }
+
+  // Update DOM directly without full re-render
+  updateSliderDOM(i);
+  filledSlots.forEach(item=>updateSliderDOM(item.idx));
+  updateRemaining();
+}
+
+function updatePctInput(i,v){
+  const val=Math.max(0,Math.min(100,parseInt(v)||0));
+  const oldVal=FILL.slots[i].pct;
+  const diff=val-oldVal;
+
+  FILL.slots[i].pct=val;
+
+  // Auto-adjust other sliders to ensure total doesn't exceed 100%
+  const filledSlots=FILL.slots.map((s,idx)=>({idx,s})).filter(x=>x.s.appId&&x.idx!==i);
+  if(diff!==0&&filledSlots.length>0){
+    const total=FILL.slots.reduce((sum,s)=>sum+(parseInt(s.pct)||0),0);
+    if(total>100){
+      const excess=total-100;
+      const adjustPerSlot=Math.floor(excess/filledSlots.length);
+      let remaining=excess-adjustPerSlot*filledSlots.length;
+
+      filledSlots.forEach((item,idx)=>{
+        const adjust=adjustPerSlot+(idx===0?remaining:0);
+        const newPct=Math.max(0,item.s.pct-adjust);
+        FILL.slots[item.idx].pct=newPct;
+      });
+
+      // Double-check we didn't exceed 100% after adjustment
+      const finalTotal=FILL.slots.reduce((sum,s)=>sum+(parseInt(s.pct)||0),0);
+      if(finalTotal>100){
+        // If still over, reduce the current input
+        FILL.slots[i].pct=Math.max(0,val-(finalTotal-100));
+      }
+    }
+  }
+
+  // Update DOM directly without full re-render
+  updateSliderDOM(i);
+  filledSlots.forEach(item=>updateSliderDOM(item.idx));
+  updateRemaining();
+}
+
+function validatePct(i,input){
+  const val=Math.max(0,Math.min(100,parseInt(input.value)||0));
+  input.value=val;
+  FILL.slots[i].pct=val;
+}
+
+function updateSliderDOM(i){
+  const slot=FILL.slots[i];
+  const pct=parseInt(slot.pct)||0;
+  const app=STATE.config.apps.find(a=>a.id===slot.appId);
+
+  // Update slider fill
+  const fillEl=document.querySelector(`#slider-fill-${i}`);
+  if(fillEl){
+    fillEl.style.width=pct+'%';
+    if(app)fillEl.style.background=app.color;
+  }
+
+  // Update slider knob position
+  const knobEl=document.querySelector(`#knob-${i}`);
+  if(knobEl)knobEl.style.left=pct+'%';
+
+  // Update range input value
+  const inputEl=document.querySelector(`#slider-input-${i}`);
+  if(inputEl)inputEl.value=pct;
+
+  // Update percentage display
+  const pctInputEl=document.querySelector(`#pct-input-${i}`);
+  if(pctInputEl)pctInputEl.value=pct;
+}
+
+function updateRemaining(){
+  const total=FILL.slots.reduce((s,a)=>s+(parseInt(a.pct)||0),0);
+  const remaining=100-total;
+  const targetEl=document.getElementById('battery-remaining');
+
+  if(targetEl){
+    const remainingClass=remaining===0?'text-emerald-400':remaining<0?'text-red-400':'text-gray-400';
+    const remainingLabel=remaining===0?'✓ 100%':remaining>0?`${remaining}% left`:`${Math.abs(remaining)}% over`;
+    targetEl.className=remainingClass+' text-sm font-semibold';
+    targetEl.textContent=remainingLabel;
+  }
+}
+
+function distributeEvenly(){
+  const filled=FILL.slots.map((s,i)=>({i,s})).filter(x=>x.s.appId);
+  if(!filled.length)return;
+  const base=Math.floor(100/filled.length);
+  const extra=100-base*filled.length;
+  FILL.slots=FILL.slots.map((s,idx)=>{const fi=filled.findIndex(f=>f.i===idx);return fi===-1?s:{...s,pct:base+(fi===filled.length-1?extra:0)};});
+  markChanged();
+  renderFill();
+}
+
+function updateCharge(i,el){
+  FILL.charges[i]=el.value;
+  markChanged();
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+}
+
+function updateBg(i,el){
+  FILL.bgProcs[i]=el.value;
+  markChanged();
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+}
+
+function updateUpdate(v){FILL.oneUpdate=v;markChanged();}
+
+function showAddNewApp(){
+  showModal({
+    title:'Add New App',
+    label:'App or project name',
+    placeholder:'e.g., "Client Meetings"',
+    confirmText:'Add',
+    onConfirm:(value)=>{
+      const nextIdx=STATE.config.apps.length;
+      const color=APP_COLORS[nextIdx%APP_COLORS.length];
+      const icon=APP_ICONS[nextIdx%APP_ICONS.length];
+      const newApp={id:'app-'+Date.now(),name:value,color,icon};
+
+      STATE.config.apps.push(newApp);
+      ss(`retro-session-${STATE.currentSessionId}`,STATE.config,true);
+
+      if(FILL.picker!==null){
+        pickApp(FILL.picker,newApp.id);
+      }
+    }
+  });
+}
+
+async function submitFill(){
+  const{battery,slots,charges,bgProcs,oneUpdate,muteNotifs,isSubmitted}=FILL;
+  const filled=slots.filter(s=>s.appId);
+  const total=slots.reduce((s,a)=>s+(parseInt(a.pct)||0),0);
+  const errs=[];
+  if(!filled.length)errs.push('Select at least one app that drained your battery.');
+  else if(total!==100)errs.push(`Percentages must add up to 100% — currently ${total}%.`);
+  if(!charges.some(c=>c.trim()))errs.push('Add at least one thing that charged you.');
+  if(!oneUpdate.trim())errs.push('Add your one update for next quarter.');
+  if(errs.length){FILL.errors=errs;renderFill();return;}
+
+  // Clear errors on successful validation
+  FILL.errors=[];
+
+  const data={
+    battery,
+    drainApps:filled.map(s=>({appId:s.appId,pct:parseInt(s.pct)})),
+    charges,
+    bgProcs,
+    oneUpdate,
+    muteNotifs:muteNotifs.filter(n=>n.trim()),
+    at:new Date().toISOString()
+  };
+
+  // Use session-specific storage key
+  const key=`retro-${STATE.currentSessionId}-p-${slug(STATE.participant)}`;
+  await ss(key,data,true);
+  STATE.allData[STATE.participant]=data;
+
+  // Clear draft since we've submitted
+  const draftKey=`retro-${STATE.currentSessionId}-draft-${slug(STATE.participant)}`;
+  localStorage.removeItem(draftKey);
+
+  // Reset change tracking
+  FILL.hasChanges=false;
+  FILL.isSubmitted=true;
+  FILL.originalData=JSON.parse(JSON.stringify(data));
+
+  go('done');
+}
+
+function resetForm(){
+  showModal({
+    title:'Reset Form?',
+    label:'Are you sure you want to reset all fields? This cannot be undone.',
+    confirmText:'Reset',
+    isConfirmation:true,
+    onConfirm:()=>{
+      initFill();
+      renderFill();
+    }
+  });
+}
+
+async function undoSubmission(){
+  showModal({
+    title:'Undo Submission?',
+    label:'Are you sure you want to undo your submission? Your data will remain in the form.',
+    confirmText:'Undo',
+    isConfirmation:true,
+    onConfirm:async()=>{
+      // Remove the submission from storage using session-specific key
+      const key=`retro-${STATE.currentSessionId}-p-${slug(STATE.participant)}`;
+      await ss(key,null,true);
+      delete STATE.allData[STATE.participant];
+
+      // Keep form data but mark as not submitted
+      FILL.isSubmitted=false;
+      FILL.hasChanges=false;
+      FILL.originalData=null;
+
+      // Re-render to show submit button instead of update
+      renderFill();
+    }
+  });
+}
+
+function renderDone(){
+  document.getElementById('root').innerHTML=`
+  <div style="max-width:600px;margin:0 auto;padding:var(--space-48) var(--space-24);text-align:center;" class="fade-in">
+    <div style="width:80px;height:80px;margin:0 auto var(--space-24);border-radius:50%;background:var(--wise-sentiment-positive);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+      <svg style="width:40px;height:40px;color:white;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+    </div>
+    <h2 style="font-size:32px;font-weight:700;margin-bottom:var(--space-12);color:var(--wise-content-primary);">Submitted!</h2>
+    <p style="font-size:16px;color:var(--wise-content-secondary);margin-bottom:var(--space-32);">Thanks ${STATE.participant}. Your facilitator will walk through everyone's phones together.</p>
+    <div style="display:flex;flex-direction:column;gap:var(--space-12);align-items:center;">
+      <button onclick="go('landing')" style="padding:var(--space-12) var(--space-24);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);width:200px;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+        ← Home
+      </button>
+      <button onclick="go('overview')" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;width:200px;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+        View all responses
+      </button>
+    </div>
+  </div>`;
+}
+
+let TEAM_READ_DATA=null;
+let TEAM_READ_LOADING=false;
+let TEAM_READ_TAB='responses'; // 'responses' or 'team-read'
+
+function renderOverview(){
+  const{config,allData}=STATE;
+  const participants=config.participants.map(p=>typeof p==='string'?{name:p,avatar:''}:p);
+  const submitted=participants.filter(p=>allData[p.name]);
+  const pending=participants.filter(p=>!allData[p.name]);
+  const canAccessTeamRead=submitted.length>=2;
+
+  const cards=submitted.map(p=>{
+    const name=p.name;
+    const avatar=p.avatar||'';
+    const colors=getAvatarColor(name);
+    const d=allData[name];
+    const batteryColor=d.battery>50?'#9FE870':d.battery>20?'#FFC091':'#FFD7EF';
+    const drainRows=d.drainApps.map(da=>{const app=config.apps.find(a=>a.id===da.appId);return app?`<div style="display:flex;align-items:center;gap:var(--space-8);margin-bottom:var(--space-8);"><div style="background:${app.color};width:32px;height:32px;font-size:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${app.icon}</div><span style="font-size:14px;color:var(--wise-content-primary);flex:1;">${app.name}</span><span style="font-size:14px;font-weight:600;color:var(--wise-content-primary);">${da.pct}%</span></div>`:''}).join('');
+    const bgRows=d.bgProcs.filter(b=>b.trim()).map(b=>`<p style="font-size:14px;color:var(--wise-content-secondary);margin-bottom:4px;">• ${b}</p>`).join('');
+    const chRows=d.charges.filter(c=>c.trim()).map(c=>`<p style="font-size:14px;color:var(--wise-content-primary);margin-bottom:4px;">⚡ ${c}</p>`).join('');
+    const muteRows=d.muteNotifs?d.muteNotifs.filter(n=>n.trim()).map(n=>`<p style="font-size:14px;color:var(--wise-content-primary);margin-bottom:4px;">🔇 ${n}</p>`).join(''):'';
+
+    return `<div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);overflow:hidden;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='';" class="fade-in">
+      <div style="padding:var(--space-16);border-bottom:1px solid var(--wise-border-neutral);">
+        <div style="display:flex;align-items:center;gap:var(--space-12);margin-bottom:var(--space-12);">
+          ${avatar?`<img src="${avatar}" style="width:48px;height:48px;border-radius:12px;object-fit:cover;">`:`<div style="width:48px;height:48px;border-radius:12px;background:${colors.bg};color:${colors.text};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">${name.charAt(0)}</div>`}
+          <div style="flex:1;">
+            <span style="font-size:16px;font-weight:600;color:var(--wise-content-primary);display:block;">${name}</span>
+            <span style="font-size:20px;font-weight:700;color:var(--wise-content-primary);">${d.battery}%</span>
+          </div>
+        </div>
+        <div style="height:12px;background:var(--wise-background-neutral);border-radius:6px;overflow:hidden;"><div style="height:100%;background:${batteryColor};border-radius:6px;transition:width 0.3s;" data-width="${d.battery}%"></div></div>
+      </div>
+      ${drainRows?`<div style="padding:var(--space-16);border-bottom:1px solid var(--wise-border-neutral);"><p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Drain</p>${drainRows}</div>`:''}
+      ${bgRows?`<div style="padding:var(--space-16);border-bottom:1px solid var(--wise-border-neutral);"><p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Background</p>${bgRows}</div>`:''}
+      ${chRows?`<div style="padding:var(--space-16);border-bottom:1px solid var(--wise-border-neutral);background:rgba(159,232,112,0.05);"><p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Charged By</p>${chRows}</div>`:''}
+      ${muteRows?`<div style="padding:var(--space-16);border-bottom:1px solid var(--wise-border-neutral);background:rgba(255,215,239,0.05);"><p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Would Mute</p>${muteRows}</div>`:''}
+      ${d.oneUpdate.trim()?`<div style="padding:var(--space-16);background:rgba(160,225,225,0.05);"><p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">One Update</p><p style="font-size:14px;color:var(--wise-content-primary);">${d.oneUpdate}</p></div>`:''}
+    </div>`;
+  }).join('');
+
+  // Team Read content
+  let teamReadContent='';
+  if(TEAM_READ_TAB==='team-read'){
+    if(!canAccessTeamRead){
+      teamReadContent=`<div style="text-align:center;padding:var(--space-48) 0;">
+        <p style="font-size:16px;color:var(--wise-content-secondary);">Team Read requires at least 2 participants to have submitted.</p>
+      </div>`;
+    }else if(TEAM_READ_LOADING){
+      teamReadContent=`<div style="text-align:center;padding:var(--space-48) 0;">
+        <div style="display:inline-block;width:48px;height:48px;border:3px solid var(--wise-border-neutral);border-top-color:var(--wise-content-primary);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:var(--space-16);"></div>
+        <p style="font-size:16px;color:var(--wise-content-primary);font-weight:600;">Analyzing team data...</p>
+      </div>`;
+    }else if(!TEAM_READ_DATA){
+      teamReadContent=`<div style="text-align:center;padding:var(--space-48) 0;">
+        <p style="font-size:16px;color:var(--wise-content-secondary);margin-bottom:var(--space-24);">Generate an AI-powered analysis of how your team is feeling.</p>
+        <button onclick="generateTeamRead()" style="padding:var(--space-16) var(--space-32);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+          Generate Team Read
+        </button>
+      </div>`;
+    }else{
+      teamReadContent=renderTeamReadAnalysis(TEAM_READ_DATA);
+    }
+  }
+
+  document.getElementById('root').innerHTML=`
+  <div style="max-width:1400px;margin:0 auto;padding:var(--space-32) var(--space-24) var(--space-48);" class="fade-in">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-16);margin-bottom:var(--space-32);">
+      <button onclick="go('landing')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      </button>
+      <h2 style="font-size:28px;font-weight:700;color:var(--wise-content-primary);flex:1;margin:0;">Team Overview</h2>
+      <button onclick="doRefresh()" style="padding:var(--space-12) var(--space-16);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:var(--space-8);color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:var(--space-8);margin-bottom:var(--space-32);border-bottom:1px solid var(--wise-border-neutral);">
+      <button onclick="switchOverviewTab('responses')" style="padding:var(--space-12) var(--space-24);background:transparent;border:none;border-bottom:2px solid ${TEAM_READ_TAB==='responses'?'var(--wise-content-primary)':'transparent'};color:${TEAM_READ_TAB==='responses'?'var(--wise-content-primary)':'var(--wise-content-secondary)'};font-weight:600;cursor:pointer;transition:all 0.2s;">
+        Responses
+      </button>
+      <button onclick="switchOverviewTab('team-read')" style="padding:var(--space-12) var(--space-24);background:transparent;border:none;border-bottom:2px solid ${TEAM_READ_TAB==='team-read'?'var(--wise-content-primary)':'transparent'};color:${TEAM_READ_TAB==='team-read'?'var(--wise-content-primary)':'var(--wise-content-secondary)'};font-weight:600;cursor:pointer;transition:all 0.2s;${!canAccessTeamRead?'opacity:0.5;cursor:not-allowed;':''}" ${!canAccessTeamRead?'disabled':''}>
+        Team Read ${canAccessTeamRead?'':'🔒'}
+      </button>
+    </div>
+
+    ${pending.length?`<div style="background:rgba(160,225,225,0.1);border:1px solid rgba(160,225,225,0.3);border-radius:var(--radius-medium);padding:var(--space-16);margin-bottom:var(--space-24);"><p style="font-size:14px;color:var(--wise-content-primary);">Still waiting for: <span style="font-weight:600;">${pending.map(p=>p.name).join(', ')}</span></p></div>`:''}
+
+    ${TEAM_READ_TAB==='responses'?
+      (!submitted.length?`<div style="text-align:center;padding:var(--space-48) 0;"><p style="font-size:16px;color:var(--wise-content-secondary);">No responses yet.</p></div>`:
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--space-24);">${cards}</div>`)
+      :teamReadContent
+    }
+  </div>`;
+
+  // Set battery bar widths after render
+  setTimeout(()=>{
+    document.querySelectorAll('[data-width]').forEach(el=>{
+      el.style.width=el.getAttribute('data-width');
+    });
+  },0);
+}
+
+async function doRefresh(){await refreshData();renderOverview();}
+
+function switchOverviewTab(tab){
+  TEAM_READ_TAB=tab;
+  renderOverview();
+}
+
+function renderTeamReadAnalysis(data){
+  return `
+    <div style="max-width:900px;margin:0 auto;">
+      <!-- Quick Stats -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-16);margin-bottom:var(--space-32);">
+        <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);text-align:center;">
+          <div style="font-size:40px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-8);">${data.avgBattery}%</div>
+          <p style="font-size:14px;color:var(--wise-content-secondary);">Average Battery</p>
+        </div>
+        <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-8);">${data.topDrain}</div>
+          <p style="font-size:14px;color:var(--wise-content-secondary);">Top Energy Drain</p>
+        </div>
+        <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);text-align:center;">
+          <div style="font-size:40px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-8);">${data.lowBatteryCount}</div>
+          <p style="font-size:14px;color:var(--wise-content-secondary);">Below 40% Battery</p>
+        </div>
+      </div>
+
+      <!-- Themes -->
+      <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);margin-bottom:var(--space-24);">
+        <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-16);">Key Themes</h3>
+        ${data.themes.map(theme=>`
+          <div style="margin-bottom:var(--space-16);">
+            <h4 style="font-size:16px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-4);">${theme.label}</h4>
+            <p style="font-size:14px;color:var(--wise-content-secondary);line-height:1.6;">${theme.description}</p>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Drain Analysis -->
+      <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);margin-bottom:var(--space-24);">
+        <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-16);">What's Draining Energy</h3>
+        <p style="font-size:14px;color:var(--wise-content-secondary);line-height:1.6;">${data.drainAnalysis}</p>
+      </div>
+
+      <!-- Team Temperature -->
+      <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);margin-bottom:var(--space-24);">
+        <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-16);">Team Temperature</h3>
+        <p style="font-size:14px;color:var(--wise-content-secondary);line-height:1.6;">${data.teamTemperature}</p>
+      </div>
+
+      <!-- Opening Question -->
+      <div style="background:rgba(159,232,112,0.05);border:1px solid rgba(159,232,112,0.2);border-radius:var(--radius-medium);padding:var(--space-24);margin-bottom:var(--space-24);">
+        <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-16);">💬 Suggested Opening Question</h3>
+        <p style="font-size:16px;color:var(--wise-content-primary);line-height:1.6;font-style:italic;">"${data.openingQuestion}"</p>
+      </div>
+
+      <!-- Regenerate Button -->
+      <div style="text-align:center;">
+        <button onclick="generateTeamRead()" style="padding:var(--space-12) var(--space-24);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+          Regenerate Analysis
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function generateTeamRead(){
+  TEAM_READ_LOADING=true;
+  renderOverview();
+
+  try{
+    // Prepare data for analysis
+    const{config,allData}=STATE;
+    const participants=config.participants.map(p=>typeof p==='string'?{name:p,avatar:''}:p);
+    const submitted=participants.filter(p=>allData[p.name]);
+
+    const sessionData={
+      participantCount:submitted.length,
+      responses:submitted.map(p=>{
+        const d=allData[p.name];
+        return{
+          battery:d.battery,
+          drainApps:d.drainApps.map(da=>{
+            const app=config.apps.find(a=>a.id===da.appId);
+            return{name:app?app.name:'Unknown',percentage:da.pct};
+          }),
+          charges:d.charges.filter(c=>c.trim()),
+          bgProcs:d.bgProcs.filter(b=>b.trim()),
+          muteNotifs:d.muteNotifs?d.muteNotifs.filter(n=>n.trim()):[],
+          oneUpdate:d.oneUpdate
+        };
+      })
+    };
+
+    // Try Chrome's built-in AI first
+    let analysis=null;
+    if(window.ai&&window.ai.languageModel){
+      try{
+        analysis=await generateWithChromeAI(sessionData);
+      }catch(e){
+        console.log('Chrome AI not available, using rule-based analysis');
+      }
+    }
+
+    // Fallback to rule-based analysis
+    if(!analysis){
+      analysis=generateRuleBasedAnalysis(sessionData,config);
+    }
+
+    TEAM_READ_DATA=analysis;
+    TEAM_READ_LOADING=false;
+    renderOverview();
+
+  }catch(error){
+    alert(`Error generating Team Read: ${error.message}`);
+    TEAM_READ_LOADING=false;
+    renderOverview();
+  }
+}
+
+async function generateWithChromeAI(sessionData){
+  const session=await window.ai.languageModel.create({
+    systemPrompt:'You analyze team retrospective data and provide warm, thoughtful insights. Never name individuals - always refer to "the team" or "some people".'
+  });
+
+  const prompt=`Analyze this team battery check data and return ONLY valid JSON:
+
+Data: ${JSON.stringify(sessionData)}
+
+Return format:
+{
+  "avgBattery": number,
+  "topDrain": "category name",
+  "lowBatteryCount": number,
+  "themes": [{"label": "short label", "description": "one sentence"}],
+  "drainAnalysis": "one paragraph about what's draining energy",
+  "teamTemperature": "one warm paragraph about team's emotional state",
+  "openingQuestion": "facilitation question for discussion"
+}`;
+
+  const result=await session.prompt(prompt);
+  const jsonMatch=result.match(/\{[\s\S]*\}/);
+  if(!jsonMatch)throw new Error('Could not parse AI response');
+  return JSON.parse(jsonMatch[0]);
+}
+
+function generateRuleBasedAnalysis(sessionData,config){
+  // Calculate stats
+  const batteries=sessionData.responses.map(r=>r.battery);
+  const avgBattery=Math.round(batteries.reduce((a,b)=>a+b,0)/batteries.length);
+  const lowBatteryCount=batteries.filter(b=>b<40).length;
+
+  // Group drain apps
+  const drainMap={};
+  sessionData.responses.forEach(r=>{
+    r.drainApps.forEach(da=>{
+      const category=categorizeDrain(da.name);
+      if(!drainMap[category])drainMap[category]=0;
+      drainMap[category]+=da.percentage;
+    });
+  });
+  const topDrain=Object.entries(drainMap).sort((a,b)=>b[1]-a[1])[0]?.[0]||'Meetings';
+
+  // Extract themes from free text
+  const allText=[
+    ...sessionData.responses.flatMap(r=>r.charges),
+    ...sessionData.responses.flatMap(r=>r.bgProcs),
+    ...sessionData.responses.flatMap(r=>r.muteNotifs)
+  ];
+  const themes=extractThemes(allText);
+
+  // Drain analysis
+  const drainAnalysis=generateDrainAnalysis(drainMap,sessionData);
+
+  // Team temperature
+  const teamTemperature=generateTeamTemperature(avgBattery,lowBatteryCount,sessionData);
+
+  // Opening question
+  const openingQuestion=generateOpeningQuestion(avgBattery,topDrain,themes);
+
+  return{
+    avgBattery,
+    topDrain,
+    lowBatteryCount,
+    themes,
+    drainAnalysis,
+    teamTemperature,
+    openingQuestion
+  };
+}
+
+function categorizeDrain(name){
+  const lower=name.toLowerCase();
+  if(/(meeting|standup|sync|alignment|catch.?up|check.?in)/i.test(lower))return'Meetings';
+  if(/(context|switch|interrupt|distract|notification)/i.test(lower))return'Context Switching';
+  if(/(email|slack|message|communication)/i.test(lower))return'Communication Overhead';
+  if(/(deadline|rush|urgent|pressure)/i.test(lower))return'Time Pressure';
+  if(/(unclear|ambiguous|confusion|direction)/i.test(lower))return'Unclear Direction';
+  if(/(bug|tech|debug|issue)/i.test(lower))return'Technical Debt';
+  return'Operational Work';
+}
+
+function extractThemes(texts){
+  const themes=[];
+  const keywords={
+    'Communication Gaps':/\b(unclear|confus|align|sync|understand|communicate)\w*/gi,
+    'Meeting Fatigue':/\b(meeting|too many|calendar|sync|standup)\w*/gi,
+    'Work-Life Balance':/\b(time|hours|weekend|evening|balance|burnout)\w*/gi,
+    'Recognition & Support':/\b(appreciation|support|help|team|together|celebrate)\w*/gi,
+    'Focus Time':/\b(focus|deep work|uninterrupted|quiet|concentrate)\w*/gi
+  };
+
+  Object.entries(keywords).forEach(([label,regex])=>{
+    const matches=texts.filter(t=>regex.test(t));
+    if(matches.length>=2){
+      themes.push({
+        label,
+        description:`Multiple people mentioned ${label.toLowerCase()}, indicating this is affecting the team's energy.`
+      });
+    }
+  });
+
+  if(themes.length===0){
+    themes.push({label:'General Energy',description:'The team has shared various concerns about energy levels and workload.'});
+  }
+
+  return themes.slice(0,3);
+}
+
+function generateDrainAnalysis(drainMap,sessionData){
+  const sorted=Object.entries(drainMap).sort((a,b)=>b[1]-a[1]);
+  const top3=sorted.slice(0,3);
+
+  if(top3.length===0)return'No significant energy drains were reported.';
+
+  const analysis=`${top3[0][0]} appears to be the primary energy drain, taking up significant bandwidth across the team. ${top3.length>1?`${top3[1][0]} and ${top3[2]?top3[2][0]:'other activities'} are also creating friction.`:''} The pattern suggests the team would benefit from examining how ${top3[0][0].toLowerCase()} is structured and whether there are opportunities to streamline.`;
+
+  return analysis;
+}
+
+function generateTeamTemperature(avgBattery,lowBatteryCount,sessionData){
+  let temp='';
+
+  if(avgBattery>=60){
+    temp='The team is generally in good shape. Energy levels are healthy, and most people seem to be managing their workload reasonably well. ';
+  }else if(avgBattery>=40){
+    temp='The team is running at medium capacity. There are signs of fatigue, but people are still engaged and contributing. ';
+  }else{
+    temp='The team is running low on battery. Energy levels suggest people are stretched thin and may be approaching burnout. ';
+  }
+
+  if(lowBatteryCount>sessionData.participantCount/2){
+    temp+='With more than half the team below 40%, this is a signal that workload, structure, or support needs immediate attention. ';
+  }else if(lowBatteryCount>0){
+    temp+=`${lowBatteryCount} ${lowBatteryCount===1?'person is':'people are'} particularly drained, which deserves specific focus. `;
+  }
+
+  temp+='The themes that emerged show where energy is being lost and where it could be recharged. This is a good moment to discuss what changes would have the most impact.';
+
+  return temp;
+}
+
+function generateOpeningQuestion(avgBattery,topDrain,themes){
+  if(avgBattery<40){
+    return`Looking at our collective battery levels, what's one thing we could stop or change this week that would give everyone more breathing room?`;
+  }
+  if(topDrain){
+    return`${topDrain} came up as a major drain. What would need to be true for this to take up less energy?`;
+  }
+  if(themes.length>0){
+    return`"${themes[0].label}" surfaced as a theme. What's one concrete step we could take to address this?`;
+  }
+  return`What's one thing that, if we changed it, would most improve how the team feels by next week?`;
+}
+
+let EDIT_DRAFT=null;
+let EDIT_NEW_APP='';
+let EDIT_NEW_P='';
+let EDIT_AVATAR_DATA={};
+
+function renderEdit(){
+  if(!EDIT_DRAFT){
+    EDIT_DRAFT=JSON.parse(JSON.stringify(STATE.config));
+    // Ensure participants are objects
+    EDIT_DRAFT.participants=EDIT_DRAFT.participants.map(p=>typeof p==='string'?{name:p,avatar:''}:p);
+  }
+  const d=EDIT_DRAFT;
+  const spinners=[
+    {label:'Drain Slots',key:'maxDrainApps',min:1,max:5},
+    {label:'Charge Stickies',key:'maxChargeStickies',min:1,max:4},
+    {label:'BG Processes',key:'maxBgProcesses',min:1,max:4},
+    {label:'Mute Notifications',key:'maxMuteNotifications',min:1,max:10},
+  ].map(({label,key,min,max})=>`
+    <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-16);">
+      <p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">${label}</p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-12);">
+        <button onclick="editSpin('${key}',${min},${max},-1)" style="width:40px;height:40px;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:700;font-size:20px;cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='var(--wise-background-screen)';">−</button>
+        <span style="font-size:28px;font-weight:700;min-width:48px;text-align:center;color:var(--wise-content-primary);">${d[key]}</span>
+        <button onclick="editSpin('${key}',${min},${max},1)" style="width:40px;height:40px;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:700;font-size:20px;cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='var(--wise-background-screen)';">+</button>
+      </div>
+    </div>`).join('');
+
+  const pTags=d.participants.map((p,i)=>{
+    const name=p.name;
+    const avatar=EDIT_AVATAR_DATA[name]||p.avatar;
+    const colors=getAvatarColor(name);
+    return `<div style="display:inline-flex;align-items:center;gap:var(--space-12);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-12) var(--space-16);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--wise-content-primary)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.borderColor='var(--wise-border-neutral)';this.style.boxShadow='';">
+      <div style="position:relative;width:48px;height:48px;">
+        ${avatar?`<img src="${avatar}" style="width:48px;height:48px;border-radius:12px;object-fit:cover;">`:`<div style="width:48px;height:48px;border-radius:12px;background:${colors.bg};color:${colors.text};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">${name.charAt(0)}</div>`}
+        <div style="position:absolute;inset:0;border-radius:12px;background:rgba(0,0,0,0.6);opacity:0;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;cursor:pointer;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0'">
+          <svg style="width:24px;height:24px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+        <input type="file" accept="image/*" onchange="handleAvatarUpload(${i},this)" style="position:absolute;inset:0;opacity:0;cursor:pointer;" title="Click to upload avatar">
+      </div>
+      <div style="flex:1;">
+        <span style="display:block;font-size:16px;font-weight:600;color:var(--wise-content-primary);">${name}</span>
+        <span style="font-size:12px;color:var(--wise-content-secondary);">Click photo to upload</span>
+      </div>
+      <button onclick="editRemoveP(${i})" style="color:var(--wise-content-secondary);background:none;border:none;cursor:pointer;transition:color 0.2s;padding:4px;" onmouseover="this.style.color='var(--wise-sentiment-negative)';" onmouseout="this.style.color='var(--wise-content-secondary)';">
+        <svg style="width:20px;height:20px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+      </button>
+    </div>`;
+  }).join('');
+
+  const appRows=d.apps.map(app=>`<div style="display:flex;align-items:center;gap:var(--space-12);padding:var(--space-12);background:var(--wise-background-screen);border-bottom:1px solid var(--wise-border-neutral);"><div style="background:${app.color};width:32px;height:32px;font-size:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${app.icon}</div><span style="font-size:14px;flex:1;color:var(--wise-content-primary);font-weight:500;">${app.name}</span><button onclick="editRemoveApp('${app.id}')" style="color:var(--wise-content-secondary);background:none;border:none;cursor:pointer;transition:color 0.2s;padding:4px;" onmouseover="this.style.color='var(--wise-sentiment-negative)';" onmouseout="this.style.color='var(--wise-content-secondary)';">✕</button></div>`).join('');
+
+  document.getElementById('root').innerHTML=`
+  <div style="max-width:900px;margin:0 auto;padding:var(--space-32) var(--space-24) var(--space-48);" class="fade-in">
+    <div style="display:flex;align-items:center;gap:var(--space-16);margin-bottom:var(--space-32);">
+      <button onclick="EDIT_DRAFT=null;go('landing')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='var(--wise-background-screen)';">
+        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      </button>
+      <h2 style="font-size:28px;font-weight:600;color:var(--wise-content-primary);margin:0;">Edit Session</h2>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:var(--space-24);">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-8);">Session Title</label>
+        <input type="text" value="${d.sessionTitle}" oninput="EDIT_DRAFT.sessionTitle=this.value" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-16);">${spinners}</div>
+
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Participants</label>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-8);margin-bottom:var(--space-16);">${pTags}</div>
+        <div style="display:flex;gap:var(--space-8);">
+          <input id="new-p" type="text" placeholder="Add participant name..." oninput="EDIT_NEW_P=this.value" onkeydown="if(event.key==='Enter')editAddP()" style="flex:1;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
+          <button onclick="editAddP()" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">Add</button>
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">App Library</label>
+        <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);overflow:hidden;margin-bottom:var(--space-16);max-height:300px;overflow-y:auto;">${appRows}</div>
+        <div style="display:flex;gap:var(--space-8);">
+          <input id="new-app" type="text" placeholder="Add app or project name..." oninput="EDIT_NEW_APP=this.value" onkeydown="if(event.key==='Enter')editAddApp()" style="flex:1;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
+          <button onclick="editAddApp()" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">Add</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:var(--space-12);">
+        <button onclick="saveEdit()" style="flex:1;padding:var(--space-16);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+          Save Session
+        </button>
+        <button onclick="deleteSession()" style="padding:var(--space-16) var(--space-24);background:transparent;color:var(--wise-sentiment-negative);border:1px solid var(--wise-sentiment-negative);border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--wise-sentiment-negative)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--wise-sentiment-negative)';">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function editSpin(key,min,max,dir){EDIT_DRAFT[key]=Math.max(min,Math.min(max,EDIT_DRAFT[key]+dir));renderEdit();}
+function editRemoveP(idx){EDIT_DRAFT.participants.splice(idx,1);renderEdit();}
+function editRemoveApp(id){EDIT_DRAFT.apps=EDIT_DRAFT.apps.filter(a=>a.id!==id);renderEdit();}
+function editAddP(){
+  const v=(document.getElementById('new-p')||{value:EDIT_NEW_P}).value.trim();
+  if(!v||EDIT_DRAFT.participants.some(p=>p.name===v))return;
+  EDIT_DRAFT.participants.push({name:v,avatar:''});EDIT_NEW_P='';renderEdit();
+}
+function handleAvatarUpload(idx,input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const name=EDIT_DRAFT.participants[idx].name;
+    EDIT_AVATAR_DATA[name]=e.target.result;
+    EDIT_DRAFT.participants[idx].avatar=e.target.result;
+    renderEdit();
+  };
+  reader.readAsDataURL(file);
+}
+function editAddApp(){
+  const v=(document.getElementById('new-app')||{value:EDIT_NEW_APP}).value.trim();
+  if(!v)return;
+  const nextIdx=EDIT_DRAFT.apps.length;
+  const color=APP_COLORS[nextIdx%APP_COLORS.length];
+  const icon=APP_ICONS[nextIdx%APP_ICONS.length];
+  EDIT_DRAFT.apps.push({id:'app-'+Date.now(),name:v,color,icon});EDIT_NEW_APP='';renderEdit();
+}
+async function saveEdit(){
+  if(STATE.currentSessionId){
+    console.log('Saving session:',STATE.currentSessionId,EDIT_DRAFT);
+    await ss(`retro-session-${STATE.currentSessionId}`,EDIT_DRAFT,true);
+
+    // Reload sessions list to ensure it's fresh
+    const sessionsList=await gs('retro-sessions-list',true)||[];
+    STATE.sessions=sessionsList;
+
+    // Update session list with new title and participants
+    const sessionIndex=STATE.sessions.findIndex(s=>s.id===STATE.currentSessionId);
+    console.log('Session index:',sessionIndex,'Sessions:',STATE.sessions);
+
+    if(sessionIndex>=0){
+      STATE.sessions[sessionIndex].title=EDIT_DRAFT.sessionTitle;
+      STATE.sessions[sessionIndex].participants=EDIT_DRAFT.participants;
+      console.log('Updated session in list:',STATE.sessions[sessionIndex]);
+      await ss('retro-sessions-list',STATE.sessions,true);
+    }else{
+      console.warn('Session not found in list, this might be a new session');
+      // Session might be newly created and not yet in the reloaded list, add it
+      const newSessionEntry={
+        id:STATE.currentSessionId,
+        title:EDIT_DRAFT.sessionTitle,
+        createdAt:new Date().toISOString(),
+        participants:EDIT_DRAFT.participants
+      };
+      STATE.sessions.push(newSessionEntry);
+      console.log('Added session to list:',newSessionEntry);
+      await ss('retro-sessions-list',STATE.sessions,true);
+    }
+  }
+  STATE.config=EDIT_DRAFT;EDIT_DRAFT=null;EDIT_AVATAR_DATA={};
+  await refreshData();go('landing');
+}
+
+async function deleteSession(){
+  if(!STATE.currentSessionId)return;
+
+  showModal({
+    title:'Delete Session?',
+    label:'Are you sure you want to delete this session? This cannot be undone.',
+    confirmText:'Delete',
+    isConfirmation:true,
+    onConfirm:async()=>{
+      // Remove session from list
+      STATE.sessions=STATE.sessions.filter(s=>s.id!==STATE.currentSessionId);
+      await ss('retro-sessions-list',STATE.sessions,true);
+
+      // Note: We don't delete the actual session data, just remove from list
+      // You could add cleanup here if needed
+
+      EDIT_DRAFT=null;
+      EDIT_AVATAR_DATA={};
+      STATE.currentSessionId=null;
+      go('sessions');
+    }
+  });
+}
+
+init();
+  </script>
+</body>
+</html>
