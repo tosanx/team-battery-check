@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Q2 Retro - Team Battery Session</title>
+  <title>Battery Check - Team Retrospective Tool</title>
+  <meta name="description" content="Honest retrospectives using the phone battery metaphor. How charged is your team?">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="Batt-health.png">
+  <link rel="apple-touch-icon" href="Batt-health.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Firebase SDK -->
@@ -33,6 +39,7 @@
       --space-8: 8px;
       --space-12: 12px;
       --space-16: 16px;
+      --space-20: 20px;
       --space-24: 24px;
       --space-32: 32px;
       --space-40: 40px;
@@ -42,6 +49,27 @@
       --radius-small: 16px;
       --radius-medium: 20px;
       --radius-large: 30px;
+    }
+
+    /* Light mode (default) - Primary Button Colors */
+    :root {
+      --wise-primary-button-bg: #0E0F0C;
+      --wise-primary-button-text: #FFFFFF;
+    }
+
+    /* Dark Mode (when body has .dark-mode class) */
+    body.dark-mode {
+      --wise-content-primary: #FFFFFF;
+      --wise-content-secondary: #B5B7B5;
+      --wise-content-tertiary: #8A8C8A;
+      --wise-background-screen: #1A1C1A;
+      --wise-background-neutral: rgba(255, 255, 255, 0.06);
+      --wise-border-neutral: rgba(255, 255, 255, 0.12);
+      --wise-sentiment-positive: #9FE870;
+      --wise-sentiment-negative: #FF6B6B;
+      --wise-primary-button-bg: #FFFFFF;
+      --wise-primary-button-text: #0E0F0C;
+      background: #0E0F0C;
     }
 
     body {
@@ -499,7 +527,7 @@
       flex: 1;
       background: transparent;
       border: none;
-      color: #5b5b5b;
+      color: #ffffff;
       font-size: 14px;
       padding: 8px 0;
       outline: none;
@@ -510,7 +538,7 @@
     }
 
     .bg-process-input::placeholder {
-      color: #3a3a3a;
+      color: #6a6a6a;
     }
 
     /* Charger section */
@@ -518,6 +546,7 @@
       background: #1f1f1f;
       border-radius: 16px;
       padding: 16px;
+      margin-bottom: 24px;
       margin-top: 16px;
     }
 
@@ -665,7 +694,11 @@
     }
 
     .segmented-control-btn.active {
-      color: var(--wise-content-primary);
+      color: #0E0F0C;
+    }
+
+    body.dark-mode .segmented-control-btn.active {
+      color: #FFFFFF;
     }
 
     .segmented-control-indicator {
@@ -796,13 +829,76 @@
       gap: 24px;
       align-items: center;
     }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--wise-content-primary);
+      color: white;
+      padding: var(--space-16) var(--space-24);
+      border-radius: var(--radius-medium);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      z-index: 10001;
+      animation: toastSlideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+      max-width: 400px;
+    }
+
+    .toast.success {
+      background: var(--wise-sentiment-positive);
+    }
+
+    .toast.error {
+      background: var(--wise-sentiment-negative);
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes toastSlideOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="min-h-screen">
   <div id="root" class="min-h-screen"></div>
 
   <script>
-// Firebase Configuration - REPLACE WITH YOUR CONFIG
+// Firebase Configuration
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB1Jx-PaENpDjUeNUQ2h9z8TP7w5i3CaQk",
   authDomain: "battery-checks.firebaseapp.com",
@@ -828,6 +924,13 @@ const APP_ICONS=['📊','📦','🌍','📝','💻','📋','📈','🧪','💼',
 
 const DEFAULT_CONFIG={
   sessionTitle:'Q2 Retro — your phone at the end of the quarter',
+  energyLabel:'End of Q2',
+  muteHeading:'Mute Notifications',
+  muteSubtext:'Things to stop or reduce',
+  mutePrompt:'What should the team mute or reduce going forward?',
+  focusHeading:'Next Quarter Focus',
+  focusSubtext:'Improvements for Q3',
+  focusPrompt:'What should the team prioritize to make next quarter better?',
   apps:[
     {id:'va',name:'Verification Automation',color:'#7F77DD',icon:'📊'},
     {id:'tr',name:'Transfer Received States',color:'#1D9E75',icon:'📦'},
@@ -920,12 +1023,81 @@ async function ss(key,val,shared=false){
 
 let STATE={screen:'sessions',participant:null,config:DEFAULT_CONFIG,allData:{},loading:true,currentSessionId:null,sessions:[]};
 
+// Theme Management
+function initTheme(){
+  const savedTheme=localStorage.getItem('battery-check-theme');
+  if(savedTheme==='dark'){
+    document.body.classList.add('dark-mode');
+  }
+  updateThemeIcon();
+}
+
+function toggleTheme(){
+  document.body.classList.toggle('dark-mode');
+  const isDark=document.body.classList.contains('dark-mode');
+  localStorage.setItem('battery-check-theme',isDark?'dark':'light');
+  updateThemeIcon();
+  // Prevent button from re-rendering on page changes
+  setTimeout(updateThemeIcon, 50);
+}
+
+function updateThemeIcon(){
+  const icon=document.getElementById('theme-icon');
+  if(!icon)return;
+
+  const isDark=document.body.classList.contains('dark-mode');
+  if(isDark){
+    // Sun icon for light mode
+    icon.innerHTML='<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
+  }else{
+    // Moon icon for dark mode
+    icon.innerHTML='<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+  }
+}
+
+function ensureThemeToggleButton(){
+  // Check if theme button already exists
+  let themeBtn=document.getElementById('global-theme-toggle');
+  if(!themeBtn){
+    // Create it once
+    const div=document.createElement('div');
+    div.id='global-theme-toggle';
+    div.style.cssText='position:fixed;top:var(--space-24);right:var(--space-24);z-index:1000;';
+    div.innerHTML=`<button onclick="toggleTheme()" style="padding:var(--space-12);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';" title="Toggle theme">
+      <svg id="theme-icon" style="width:20px;height:20px;color:var(--wise-content-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    </button>`;
+    document.body.appendChild(div);
+  }
+  updateThemeIcon();
+}
+
 async function init(){
+  initTheme();
+  // Check for session in URL
+  const urlParams=new URLSearchParams(window.location.search);
+  const sessionParam=urlParams.get('session');
+
   // Load all sessions
   const sessionsList=await gs('retro-sessions-list',true)||[];
   STATE.sessions=sessionsList;
 
-  // If we have a current session, load it
+  // If session in URL, load that session
+  if(sessionParam){
+    const session=sessionsList.find(s=>s.id===sessionParam);
+    if(session){
+      STATE.currentSessionId=sessionParam;
+      const cfg=await gs(`retro-session-${sessionParam}`,true);
+      if(cfg){
+        STATE.config=cfg;
+        await refreshData();
+        STATE.loading=false;
+        go('landing');
+        return;
+      }
+    }
+  }
+
+  // Otherwise, if we have sessions, load the last one
   if(sessionsList.length>0){
     const lastSessionId=sessionsList[sessionsList.length-1].id;
     STATE.currentSessionId=lastSessionId;
@@ -936,6 +1108,40 @@ async function init(){
 
   STATE.loading=false;
   render();
+}
+
+function getSessionShareLink(sessionId){
+  const baseUrl=window.location.origin+window.location.pathname;
+  return `${baseUrl}?session=${sessionId}`;
+}
+
+function copyShareLink(sessionId){
+  const link=getSessionShareLink(sessionId);
+  navigator.clipboard.writeText(link).then(()=>{
+    showToast('Link copied to clipboard!','success');
+  }).catch(()=>{
+    prompt('Copy this link:',link);
+  });
+}
+
+function showToast(message,type='success'){
+  const toast=document.createElement('div');
+  toast.className=`toast ${type}`;
+  const icon=type==='info'?'<div class="loading-spinner"></div>':
+    type==='success'?'<svg style="width:20px;height:20px;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>':
+    '<svg style="width:20px;height:20px;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
+
+  toast.innerHTML=`${icon}<span style="flex:1;">${message}</span>`;
+  document.body.appendChild(toast);
+
+  if(type!=='info'){
+    setTimeout(()=>{
+      toast.style.animation='toastSlideOut 0.3s ease';
+      setTimeout(()=>toast.remove(),300);
+    },3000);
+  }
+
+  return toast; // Return so we can remove it manually for loading states
 }
 
 async function refreshData(){
@@ -958,6 +1164,9 @@ async function render(){
   else if(STATE.screen==='done')renderDone();
   else if(STATE.screen==='edit')renderEdit();
   else if(STATE.screen==='overview')renderOverview();
+
+  // Ensure theme toggle button exists and is synced
+  ensureThemeToggleButton();
 }
 
 async function go(screen,extra={}){
@@ -980,6 +1189,18 @@ async function go(screen,extra={}){
   }
 
   STATE={...STATE,screen,...extra};
+
+  // Update URL when navigating to landing with a session
+  if(screen==='landing'&&STATE.currentSessionId){
+    const newUrl=`${window.location.pathname}?session=${STATE.currentSessionId}`;
+    window.history.replaceState({sessionId:STATE.currentSessionId},'',newUrl);
+  }
+
+  // Clear URL parameter when navigating to sessions list
+  if(screen==='sessions'){
+    window.history.replaceState({},'',window.location.pathname);
+  }
+
   render();
 }
 
@@ -1069,7 +1290,7 @@ function renderModal(){
           <button onclick="closeModal()" style="padding:var(--space-12) var(--space-24);background:transparent;border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;color:var(--wise-content-primary);transition:all 0.2s;" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='transparent';">
             Cancel
           </button>
-          <button onclick="confirmModal()" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+          <button onclick="confirmModal()" style="padding:var(--space-12) var(--space-24);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
             ${MODAL_STATE.confirmText||'Confirm'}
           </button>
         </div>
@@ -1116,19 +1337,26 @@ async function renderSessions(){
   const sessionCards=sessions.map(s=>{
     const date=new Date(s.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     const participantCount=Array.isArray(s.participants)?s.participants.length:0;
-    return `<button onclick="loadSession('${s.id}')" style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);transition:all 0.2s;cursor:pointer;text-align:left;width:100%;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-      <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-4);">${s.title}</h3>
-      <p style="font-size:14px;color:var(--wise-content-secondary);margin-bottom:var(--space-8);">${participantCount} participants</p>
-      <p style="font-size:12px;color:var(--wise-content-tertiary);">Created ${date}</p>
-    </button>`;
+    return `<div class="session-card" style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-24);transition:all 0.2s;position:relative;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';this.querySelector('.share-btn').style.opacity='1';" onmouseout="this.style.transform='';this.style.boxShadow='';this.querySelector('.share-btn').style.opacity='0';">
+      <div onclick="loadSession('${s.id}')" style="cursor:pointer;padding-right:80px;">
+        <h3 style="font-size:18px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-4);">${s.title}</h3>
+        <p style="font-size:14px;color:var(--wise-content-secondary);margin-bottom:var(--space-8);">${participantCount} participants</p>
+        <p style="font-size:12px;color:var(--wise-content-tertiary);">Created ${date}</p>
+      </div>
+      <button class="share-btn" onclick="event.stopPropagation();copyShareLink('${s.id}')" style="position:absolute;top:var(--space-24);right:var(--space-24);padding:var(--space-8) var(--space-12);background:var(--wise-background-neutral);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:var(--space-8);font-size:12px;font-weight:600;color:var(--wise-content-primary);opacity:0;" onmouseover="this.style.opacity='1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';this.style.transform='';" title="Copy share link">
+        <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+        Share
+      </button>
+    </div>`;
   }).join('');
 
   document.getElementById('root').innerHTML=`
   <div style="max-width:1200px;margin:0 auto;padding:var(--space-48) var(--space-24);" class="fade-in">
+    
     <!-- Hero Header -->
     <div style="text-align:center;margin-bottom:var(--space-48);padding:var(--space-48) 0;">
       <div style="margin-bottom:var(--space-16);">
-        <img src="https://wise.com/web-art/assets/illustrations/heart-2-large@2x.webp" alt="Heart" style="width:80px;height:80px;display:inline-block;">
+        <img src="Batt-health.png" alt="Battery Health" style="width:80px;height:80px;display:inline-block;">
       </div>
       <h1 style="font-size:48px;font-weight:700;margin-bottom:var(--space-16);color:var(--wise-content-primary);">Battery Check</h1>
       <p style="font-size:18px;line-height:28px;color:var(--wise-content-secondary);max-width:600px;margin:0 auto;">Honest retrospectives using the phone battery metaphor. How charged is your team?</p>
@@ -1136,7 +1364,7 @@ async function renderSessions(){
 
     <!-- Create Session Button -->
     <div style="margin-bottom:var(--space-48);text-align:center;">
-      <button onclick="createNewSession()" style="padding:var(--space-16) var(--space-32);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:inline-flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+      <button onclick="createNewSession()" style="padding:var(--space-16) var(--space-32);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:inline-flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Create New Session
       </button>
@@ -1207,6 +1435,11 @@ async function loadSession(sessionId){
     STATE.config=cfg;
     await refreshData();
     STATE.loading=false;
+
+    // Update URL with session parameter
+    const newUrl=`${window.location.pathname}?session=${sessionId}`;
+    window.history.pushState({sessionId:sessionId},'',newUrl);
+
     go('landing');
   }else{
     console.error('Session not found:',sessionId);
@@ -1239,6 +1472,7 @@ function renderLanding(){
 
   document.getElementById('root').innerHTML=`
   <div style="max-width:1200px;margin:0 auto;padding:var(--space-48) var(--space-24);" class="fade-in">
+    
     <div style="margin-bottom:var(--space-24);">
       <button onclick="go('sessions')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);display:inline-flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -1263,7 +1497,7 @@ function renderLanding(){
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
         View responses (${submitted}/${participants.length})
       </button>
-      <button onclick="go('edit')" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;transition:all 0.2s;cursor:pointer;display:flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.opacity='0.9';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.boxShadow='';">
+      <button onclick="go('edit')" style="padding:var(--space-12) var(--space-24);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-small);font-weight:600;transition:all 0.2s;cursor:pointer;display:flex;align-items:center;gap:var(--space-8);" onmouseover="this.style.opacity='0.9';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.boxShadow='';">
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         Edit session
       </button>
@@ -1271,7 +1505,7 @@ function renderLanding(){
   </div>`;
 }
 
-let FILL={battery:65,slots:[],charges:[],bgProcs:[],oneUpdate:'',muteNotifs:[],picker:null,errors:[],currentDevice:1,hasChanges:false,isSubmitted:false,originalData:null,lastParticipant:null};
+let FILL={battery:50,slots:[],charges:[],bgProcs:[],oneUpdate:'',muteNotifs:[],picker:null,errors:[],currentDevice:1,hasChanges:false,isSubmitted:false,originalData:null,lastParticipant:null};
 let MODAL_STATE=null;
 
 const WISE_AVATAR_COLORS=[
@@ -1340,7 +1574,7 @@ function initFill(){
   }else{
     // New submission
     FILL={
-      battery:65,
+      battery:50,
       slots:Array(config.maxDrainApps).fill(null).map(()=>({appId:'',pct:0})),
       charges:Array(config.maxChargeStickies).fill(''),
       bgProcs:Array(config.maxBgProcesses).fill(''),
@@ -1370,8 +1604,8 @@ function updateSubmitButton(){
   if(submitBtn&&FILL.isSubmitted){
     if(FILL.hasChanges){
       submitBtn.disabled=false;
-      submitBtn.style.background='var(--wise-content-primary)';
-      submitBtn.style.color='white';
+      submitBtn.style.background='var(--wise-primary-button-bg)';
+      submitBtn.style.color='var(--wise-primary-button-text)';
       submitBtn.style.border='none';
       submitBtn.style.cursor='pointer';
       submitBtn.onmouseover=function(){
@@ -1495,6 +1729,7 @@ function renderFill(){
 
   document.getElementById('root').innerHTML=`
   <div style="max-width:1400px;margin:0 auto;padding:var(--space-32) var(--space-24) var(--space-48);" class="fade-in">
+    
     <div style="display:flex;align-items:center;gap:var(--space-16);margin-bottom:var(--space-24);">
       <button onclick="go('landing')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-screen);this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.background='var(--wise-background-screen);this.style.boxShadow='';">
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -1515,7 +1750,7 @@ function renderFill(){
       <!-- Phone with Tabs -->
       <div class="device-wrapper" style="display:flex;flex-direction:column;gap:16px;">
         <!-- Segmented Control Navigation -->
-        <div style="display:flex;justify-content:center;">
+        <div style="display:flex;justify-content:center;padding:0 var(--space-4);">
           <div class="segmented-control">
             <div class="segmented-control-indicator" style="width:80px;transform:translateX(${(currentDevice-1)*84}px);"></div>
             <button onclick="switchDevice(1)" class="segmented-control-btn ${currentDevice===1?'active':''}">Energy</button>
@@ -1539,7 +1774,7 @@ function renderFill(){
           <div class="phone-content">
             <div style="margin-bottom:16px;">
               <h2 style="font-size:28px;font-weight:700;margin:0;line-height:1.2;">Energy level</h2>
-              <p style="font-size:13px;color:rgba(255,255,255,0.6);margin:4px 0 0;">End of Q2</p>
+              <p style="font-size:13px;color:rgba(255,255,255,0.6);margin:4px 0 0;">${config.energyLabel||'End of Quarter'}</p>
             </div>
 
             <div class="large-battery" style="margin-bottom:24px;">
@@ -1593,10 +1828,10 @@ function renderFill(){
 
             <div style="max-height:500px;overflow-y:auto;">
               <h3 style="font-size:14px;font-weight:600;color:white !important;margin:0 0 16px;text-align:center;">
-                What would you mute?
+                ${config.muteHeading||'Mute Notifications'}
               </h3>
               <p style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin:0 0 20px;text-align:center;line-height:1.5;">
-                Recurring things that created noise, pressure, or interrupted your focus
+                ${config.muteSubtext||'Things to stop or reduce'}
               </p>
 
               ${notificationCards}
@@ -1624,14 +1859,14 @@ function renderFill(){
           <div class="phone-content">
             <div style="text-align:center;margin-bottom:24px;padding-top:40px;">
               <div style="font-size:64px;margin-bottom:16px;">🎯</div>
-              <h2 style="font-size:28px;font-weight:700;margin:0 0 8px;line-height:1.2;">Next Quarter Focus</h2>
-              <p style="font-size:13px;color:rgba(255,255,255,0.6);margin:0;">Improvements for Q3</p>
+              <h2 style="font-size:28px;font-weight:700;margin:0 0 8px;line-height:1.2;">${config.focusHeading||'Next Quarter Focus'}</h2>
+              <p style="font-size:13px;color:rgba(255,255,255,0.6);margin:0;">${config.focusSubtext||'Improvements for next period'}</p>
             </div>
 
             <div style="background:rgba(181,212,244,0.1);border-radius:20px;padding:20px;border:1px solid rgba(181,212,244,0.2);">
-              <h3 style="font-size:15px;font-weight:600;color:#b5d4f4;margin:0 0 8px;">📱 One update for Q3</h3>
+              <h3 style="font-size:15px;font-weight:600;color:#b5d4f4;margin:0 0 8px;">📱 One update</h3>
               <p style="font-size:12px;color:rgba(255,255,255,0.6);margin:0 0 16px;line-height:1.5;">If you were to bring improvements to the next model...</p>
-              <textarea oninput="updateUpdate(this.value)" placeholder="What should the team prioritize to make next quarter better?" class="update-input" style="min-height:120px;">${oneUpdate}</textarea>
+              <textarea oninput="updateUpdate(this.value)" placeholder="${config.focusPrompt||'What should the team prioritize?'}" class="update-input" style="min-height:120px;">${oneUpdate}</textarea>
             </div>
           </div>
         </div>
@@ -1653,7 +1888,7 @@ function renderFill(){
         `:`
           <!-- Not submitted - show submit button with reset -->
           <div style="display:flex;gap:var(--space-12);align-items:center;">
-            <button onclick="submitFill()" style="flex:1;padding:var(--space-16) var(--space-32);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+            <button onclick="submitFill()" style="flex:1;padding:var(--space-16) var(--space-32);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
               Submit my phones →
             </button>
             <button onclick="resetForm()" style="padding:var(--space-16);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.borderColor='var(--wise-content-primary)';this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.borderColor='var(--wise-border-neutral)';this.style.background='var(--wise-background-screen)';" title="Reset form">
@@ -1996,6 +2231,9 @@ async function submitFill(){
   // Clear errors on successful validation
   FILL.errors=[];
 
+  // Show loading state
+  showToast(isSubmitted?'Updating...':'Submitting...','info');
+
   const data={
     battery,
     drainApps:filled.map(s=>({appId:s.appId,pct:parseInt(s.pct)})),
@@ -2020,6 +2258,7 @@ async function submitFill(){
   FILL.isSubmitted=true;
   FILL.originalData=JSON.parse(JSON.stringify(data));
 
+  showToast(isSubmitted?'Updated successfully!':'Submitted successfully!','success');
   go('done');
 }
 
@@ -2134,7 +2373,7 @@ function renderOverview(){
     }else if(!TEAM_READ_DATA){
       teamReadContent=`<div style="text-align:center;padding:var(--space-48) 0;">
         <p style="font-size:16px;color:var(--wise-content-secondary);margin-bottom:var(--space-24);">Generate an AI-powered analysis of how your team is feeling.</p>
-        <button onclick="generateTeamRead()" style="padding:var(--space-16) var(--space-32);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+        <button onclick="generateTeamRead()" style="padding:var(--space-16) var(--space-32);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
           Generate Team Read
         </button>
       </div>`;
@@ -2145,11 +2384,30 @@ function renderOverview(){
 
   document.getElementById('root').innerHTML=`
   <div style="max-width:1400px;margin:0 auto;padding:var(--space-32) var(--space-24) var(--space-48);" class="fade-in">
+    
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-16);margin-bottom:var(--space-32);">
       <button onclick="go('landing')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
       </button>
       <h2 style="font-size:28px;font-weight:700;color:var(--wise-content-primary);flex:1;margin:0;">Team Overview</h2>
+      <div style="position:relative;">
+        <button onclick="toggleExportMenu()" id="export-btn" style="padding:var(--space-12) var(--space-16);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:var(--space-8);color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
+          <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Export
+          <svg style="width:12px;height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        <div id="export-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:160px;z-index:1000;">
+          <button onclick="exportData('csv');toggleExportMenu();" style="width:100%;padding:var(--space-12) var(--space-16);background:transparent;border:none;text-align:left;cursor:pointer;transition:background 0.2s;font-size:14px;font-weight:600;color:var(--wise-content-primary);border-radius:var(--radius-medium) var(--radius-medium) 0 0;" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='transparent';">
+            📄 Export as CSV
+          </button>
+          <button onclick="exportData('png');toggleExportMenu();" style="width:100%;padding:var(--space-12) var(--space-16);background:transparent;border:none;text-align:left;cursor:pointer;transition:background 0.2s;font-size:14px;font-weight:600;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='transparent';">
+            🖼️ Export as PNG
+          </button>
+          <button onclick="exportData('pdf');toggleExportMenu();" style="width:100%;padding:var(--space-12) var(--space-16);background:transparent;border:none;text-align:left;cursor:pointer;transition:background 0.2s;font-size:14px;font-weight:600;color:var(--wise-content-primary);border-radius:0 0 var(--radius-medium) var(--radius-medium);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='transparent';">
+            📋 Export as PDF
+          </button>
+        </div>
+      </div>
       <button onclick="doRefresh()" style="padding:var(--space-12) var(--space-16);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:var(--space-8);color:var(--wise-content-primary);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';" onmouseout="this.style.boxShadow='';">
         <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         Refresh
@@ -2184,6 +2442,174 @@ function renderOverview(){
 }
 
 async function doRefresh(){await refreshData();renderOverview();}
+
+function toggleExportMenu(){
+  const menu=document.getElementById('export-menu');
+  if(menu){
+    menu.style.display=menu.style.display==='none'?'block':'none';
+  }
+}
+
+// Close export menu when clicking outside
+document.addEventListener('click',(e)=>{
+  const menu=document.getElementById('export-menu');
+  const btn=document.getElementById('export-btn');
+  if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)){
+    menu.style.display='none';
+  }
+});
+
+async function exportData(format='csv'){
+  const{config,allData}=STATE;
+  const participants=config.participants.map(p=>typeof p==='string'?{name:p,avatar:''}:p);
+  const submitted=participants.filter(p=>allData[p.name]);
+
+  if(format==='csv'){
+    // Create CSV data
+    let csvContent="data:text/csv;charset=utf-8,";
+    csvContent+="Participant,Battery Level,Top Drain 1,Top Drain 2,Top Drain 3,Charges,Background Processes,Mute Notifications,One Update\n";
+
+    submitted.forEach(p=>{
+      const name=p.name;
+      const d=allData[name];
+      const drainApps=d.drainApps.map(da=>{
+        const app=config.apps.find(a=>a.id===da.appId);
+        return app?`${app.name} (${da.pct}%)`:'';
+      });
+      const charges=d.charges.filter(c=>c.trim()).join('; ');
+      const bgProcs=d.bgProcs.filter(b=>b.trim()).join('; ');
+      const muteNotifs=d.muteNotifs?d.muteNotifs.filter(n=>n.trim()).join('; '):'';
+      const oneUpdate=(d.oneUpdate||'').replace(/"/g,'""');
+
+      csvContent+=`"${name}",${d.battery},"${drainApps[0]||''}","${drainApps[1]||''}","${drainApps[2]||''}","${charges}","${bgProcs}","${muteNotifs}","${oneUpdate}"\n`;
+    });
+
+    // Download CSV
+    const encodedUri=encodeURI(csvContent);
+    const link=document.createElement("a");
+    link.setAttribute("href",encodedUri);
+    link.setAttribute("download",`${slug(config.sessionTitle)}-export.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('CSV exported successfully!','success');
+  }else if(format==='png'||format==='pdf'){
+    const loadingToast=showToast(`Generating ${format.toUpperCase()}...`,'info');
+
+    try{
+      // We'll use html2canvas library for PNG export
+      // For PDF, we'll use jsPDF
+      // Both need to be loaded from CDN
+      await loadExportLibraries();
+
+      // Get the responses container
+      const container=document.querySelector('.fade-in');
+      if(!container){
+        showToast('No content to export','error');
+        loadingToast.remove();
+        return;
+      }
+
+      // Create a clone for export (hide buttons/interactive elements)
+      const clone=container.cloneNode(true);
+      clone.style.padding='48px';
+      clone.style.background='white';
+
+      // Remove back/export/refresh buttons
+      const buttons=clone.querySelector('[style*="flex-wrap"]');
+      if(buttons){
+        const btns=buttons.querySelectorAll('button');
+        btns.forEach(btn=>btn.remove());
+      }
+
+      // Remove tabs if visible
+      const tabs=clone.querySelector('[style*="border-bottom"]');
+      if(tabs&&tabs.querySelector('button')){
+        tabs.remove();
+      }
+
+      // Temporarily add to body for rendering
+      clone.style.position='absolute';
+      clone.style.left='-9999px';
+      clone.style.top='0';
+      document.body.appendChild(clone);
+
+      if(format==='png'){
+        const canvas=await html2canvas(clone,{
+          backgroundColor:'#ffffff',
+          scale:2,
+          logging:false,
+          useCORS:true
+        });
+
+        canvas.toBlob((blob)=>{
+          const url=URL.createObjectURL(blob);
+          const link=document.createElement('a');
+          link.href=url;
+          link.download=`${slug(config.sessionTitle)}-export.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          document.body.removeChild(clone);
+          loadingToast.remove();
+          showToast('PNG exported successfully!','success');
+        });
+      }else if(format==='pdf'){
+        const canvas=await html2canvas(clone,{
+          backgroundColor:'#ffffff',
+          scale:2,
+          logging:false,
+          useCORS:true
+        });
+
+        const imgData=canvas.toDataURL('image/png');
+        const pdf=new jspdf.jsPDF({
+          orientation:canvas.width>canvas.height?'landscape':'portrait',
+          unit:'px',
+          format:[canvas.width,canvas.height]
+        });
+
+        pdf.addImage(imgData,'PNG',0,0,canvas.width,canvas.height);
+        pdf.save(`${slug(config.sessionTitle)}-export.pdf`);
+
+        document.body.removeChild(clone);
+        loadingToast.remove();
+        showToast('PDF exported successfully!','success');
+      }
+    }catch(error){
+      console.error('Export error:',error);
+      loadingToast.remove();
+      showToast(`Failed to export ${format.toUpperCase()}. Please try again.`,'error');
+    }
+  }
+}
+
+async function loadExportLibraries(){
+  // Load html2canvas
+  if(!window.html2canvas){
+    await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      script.onload=resolve;
+      script.onerror=reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  // Load jsPDF
+  if(!window.jspdf){
+    await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      script.onload=resolve;
+      script.onerror=reject;
+      document.head.appendChild(script);
+    });
+  }
+}
 
 function switchOverviewTab(tab){
   TEAM_READ_TAB=tab;
@@ -2461,20 +2887,32 @@ let EDIT_DRAFT=null;
 let EDIT_NEW_APP='';
 let EDIT_NEW_P='';
 let EDIT_AVATAR_DATA={};
+let EDIT_TAB='energy'; // 'energy', 'mute', or 'focus'
 
 function renderEdit(){
   if(!EDIT_DRAFT){
+    EDIT_TAB='energy'; // Reset to first tab
     EDIT_DRAFT=JSON.parse(JSON.stringify(STATE.config));
     // Ensure participants are objects
     EDIT_DRAFT.participants=EDIT_DRAFT.participants.map(p=>typeof p==='string'?{name:p,avatar:''}:p);
+    // Ensure label fields exist with defaults
+    if(!EDIT_DRAFT.energyLabel)EDIT_DRAFT.energyLabel='End of Quarter';
+    if(!EDIT_DRAFT.muteHeading)EDIT_DRAFT.muteHeading='Mute Notifications';
+    if(!EDIT_DRAFT.muteSubtext)EDIT_DRAFT.muteSubtext='Things to stop or reduce';
+    if(!EDIT_DRAFT.mutePrompt)EDIT_DRAFT.mutePrompt='What should the team mute or reduce going forward?';
+    if(!EDIT_DRAFT.focusHeading)EDIT_DRAFT.focusHeading='Next Quarter Focus';
+    if(!EDIT_DRAFT.focusSubtext)EDIT_DRAFT.focusSubtext='Improvements for next period';
+    if(!EDIT_DRAFT.focusPrompt)EDIT_DRAFT.focusPrompt='What should the team prioritize?';
   }
   const d=EDIT_DRAFT;
-  const spinners=[
+  const spinnerData=[
     {label:'Drain Slots',key:'maxDrainApps',min:1,max:5},
     {label:'Charge Stickies',key:'maxChargeStickies',min:1,max:4},
     {label:'BG Processes',key:'maxBgProcesses',min:1,max:4},
     {label:'Mute Notifications',key:'maxMuteNotifications',min:1,max:10},
-  ].map(({label,key,min,max})=>`
+  ];
+
+  const renderSpinner=({label,key,min,max})=>`
     <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);padding:var(--space-16);">
       <p style="font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">${label}</p>
       <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-12);">
@@ -2482,7 +2920,7 @@ function renderEdit(){
         <span style="font-size:28px;font-weight:700;min-width:48px;text-align:center;color:var(--wise-content-primary);">${d[key]}</span>
         <button onclick="editSpin('${key}',${min},${max},1)" style="width:40px;height:40px;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);font-weight:700;font-size:20px;cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='var(--wise-background-screen)';">+</button>
       </div>
-    </div>`).join('');
+    </div>`;
 
   const pTags=d.participants.map((p,i)=>{
     const name=p.name;
@@ -2510,6 +2948,7 @@ function renderEdit(){
 
   document.getElementById('root').innerHTML=`
   <div style="max-width:900px;margin:0 auto;padding:var(--space-32) var(--space-24) var(--space-48);" class="fade-in">
+    
     <div style="display:flex;align-items:center;gap:var(--space-16);margin-bottom:var(--space-32);">
       <button onclick="EDIT_DRAFT=null;go('landing')" style="padding:var(--space-8);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;color:var(--wise-content-primary);" onmouseover="this.style.background='var(--wise-background-neutral)';" onmouseout="this.style.background='var(--wise-background-screen)';">
         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -2523,28 +2962,91 @@ function renderEdit(){
         <input type="text" value="${d.sessionTitle}" oninput="EDIT_DRAFT.sessionTitle=this.value" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-16);">${spinners}</div>
-
       <div>
         <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Participants</label>
         <div style="display:flex;flex-wrap:wrap;gap:var(--space-8);margin-bottom:var(--space-16);">${pTags}</div>
         <div style="display:flex;gap:var(--space-8);">
           <input id="new-p" type="text" placeholder="Add participant name..." oninput="EDIT_NEW_P=this.value" onkeydown="if(event.key==='Enter')editAddP()" style="flex:1;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
-          <button onclick="editAddP()" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">Add</button>
+          <button onclick="editAddP()" style="padding:var(--space-12) var(--space-24);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">Add</button>
         </div>
       </div>
 
+      <!-- Tabs Navigation -->
       <div>
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">App Library</label>
-        <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);overflow:hidden;margin-bottom:var(--space-16);max-height:300px;overflow-y:auto;">${appRows}</div>
-        <div style="display:flex;gap:var(--space-8);">
-          <input id="new-app" type="text" placeholder="Add app or project name..." oninput="EDIT_NEW_APP=this.value" onkeydown="if(event.key==='Enter')editAddApp()" style="flex:1;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
-          <button onclick="editAddApp()" style="padding:var(--space-12) var(--space-24);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">Add</button>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-12);">Screen Configuration</label>
+        <div style="display:flex;gap:var(--space-8);margin-bottom:var(--space-20);border-bottom:1px solid var(--wise-border-neutral);">
+          <button onclick="switchEditTab('energy')" style="padding:var(--space-12) var(--space-24);background:transparent;border:none;border-bottom:2px solid ${EDIT_TAB==='energy'?'var(--wise-content-primary)':'transparent'};color:${EDIT_TAB==='energy'?'var(--wise-content-primary)':'var(--wise-content-secondary)'};font-weight:600;cursor:pointer;transition:all 0.2s;">
+            ⚡ Energy
+          </button>
+          <button onclick="switchEditTab('mute')" style="padding:var(--space-12) var(--space-24);background:transparent;border:none;border-bottom:2px solid ${EDIT_TAB==='mute'?'var(--wise-content-primary)':'transparent'};color:${EDIT_TAB==='mute'?'var(--wise-content-primary)':'var(--wise-content-secondary)'};font-weight:600;cursor:pointer;transition:all 0.2s;">
+            🔕 Mute
+          </button>
+          <button onclick="switchEditTab('focus')" style="padding:var(--space-12) var(--space-24);background:transparent;border:none;border-bottom:2px solid ${EDIT_TAB==='focus'?'var(--wise-content-primary)':'transparent'};color:${EDIT_TAB==='focus'?'var(--wise-content-primary)':'var(--wise-content-secondary)'};font-weight:600;cursor:pointer;transition:all 0.2s;">
+            🎯 Focus
+          </button>
         </div>
+
+        <!-- Energy Tab Content -->
+        ${EDIT_TAB==='energy'?`
+          <div style="display:flex;flex-direction:column;gap:var(--space-20);">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-8);">Energy Level Label</label>
+              <input type="text" value="${d.energyLabel||'End of Quarter'}" oninput="EDIT_DRAFT.energyLabel=this.value" placeholder="e.g., End of Q2" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);">
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-16);">
+              ${renderSpinner(spinnerData.find(s=>s.label==='Drain Slots'))}
+              ${renderSpinner(spinnerData.find(s=>s.label==='Charge Stickies'))}
+              ${renderSpinner(spinnerData.find(s=>s.label==='BG Processes'))}
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-12);">App Library</label>
+              <div style="background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-medium);overflow:hidden;margin-bottom:var(--space-16);max-height:300px;overflow-y:auto;">${appRows}</div>
+              <div style="display:flex;gap:var(--space-8);">
+                <input id="new-app" type="text" placeholder="Add app or project name..." oninput="EDIT_NEW_APP=this.value" onkeydown="if(event.key==='Enter')editAddApp()" style="flex:1;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);" onfocus="this.style.borderColor='var(--wise-content-primary)';" onblur="this.style.borderColor='var(--wise-border-neutral)';">
+                <button onclick="editAddApp()" style="padding:var(--space-12) var(--space-24);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">Add</button>
+              </div>
+            </div>
+          </div>
+        `:''}
+
+        <!-- Mute Tab Content -->
+        ${EDIT_TAB==='mute'?`
+          <div style="display:flex;flex-direction:column;gap:var(--space-20);">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-8);">Mute Heading</label>
+              <input type="text" value="${d.muteHeading||'Mute Notifications'}" oninput="EDIT_DRAFT.muteHeading=this.value" placeholder="e.g., Mute Notifications" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);">
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-8);">Mute Subtext</label>
+              <input type="text" value="${d.muteSubtext||'Things to stop or reduce'}" oninput="EDIT_DRAFT.muteSubtext=this.value" placeholder="e.g., Things to stop or reduce" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);">
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-16);">
+              ${renderSpinner(spinnerData.find(s=>s.label==='Mute Notifications'))}
+            </div>
+          </div>
+        `:''}
+
+        <!-- Focus Tab Content -->
+        ${EDIT_TAB==='focus'?`
+          <div style="display:flex;flex-direction:column;gap:var(--space-20);">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-8);">Focus Heading</label>
+              <input type="text" value="${d.focusHeading||'Next Quarter Focus'}" oninput="EDIT_DRAFT.focusHeading=this.value" placeholder="e.g., Next Quarter Focus" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);">
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-8);">Focus Subtext</label>
+              <input type="text" value="${d.focusSubtext||'Improvements for next period'}" oninput="EDIT_DRAFT.focusSubtext=this.value" placeholder="e.g., Improvements for Q3" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);">
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--wise-content-primary);margin-bottom:var(--space-8);">Focus Prompt Placeholder</label>
+              <input type="text" value="${d.focusPrompt||'What should the team prioritize?'}" oninput="EDIT_DRAFT.focusPrompt=this.value" placeholder="Focus input prompt" style="width:100%;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-12) var(--space-16);font-size:14px;color:var(--wise-content-primary);">
+            </div>
+          </div>
+        `:''}
       </div>
 
       <div style="display:flex;gap:var(--space-12);">
-        <button onclick="saveEdit()" style="flex:1;padding:var(--space-16);background:var(--wise-content-primary);color:white;border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+        <button onclick="saveEdit()" style="flex:1;padding:var(--space-16);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
           Save Session
         </button>
         <button onclick="deleteSession()" style="padding:var(--space-16) var(--space-24);background:transparent;color:var(--wise-sentiment-negative);border:1px solid var(--wise-sentiment-negative);border-radius:var(--radius-medium);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--wise-sentiment-negative)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--wise-sentiment-negative)';">
@@ -2555,6 +3057,7 @@ function renderEdit(){
   </div>`;
 }
 
+function switchEditTab(tab){EDIT_TAB=tab;renderEdit();}
 function editSpin(key,min,max,dir){EDIT_DRAFT[key]=Math.max(min,Math.min(max,EDIT_DRAFT[key]+dir));renderEdit();}
 function editRemoveP(idx){EDIT_DRAFT.participants.splice(idx,1);renderEdit();}
 function editRemoveApp(id){EDIT_DRAFT.apps=EDIT_DRAFT.apps.filter(a=>a.id!==id);renderEdit();}
@@ -2622,6 +3125,8 @@ function editAddApp(){
 }
 async function saveEdit(){
   if(STATE.currentSessionId){
+    const loadingToast=showToast('Saving session...','info');
+
     console.log('Saving session:',STATE.currentSessionId,EDIT_DRAFT);
     await ss(`retro-session-${STATE.currentSessionId}`,EDIT_DRAFT,true);
 
@@ -2651,6 +3156,9 @@ async function saveEdit(){
       console.log('Added session to list:',newSessionEntry);
       await ss('retro-sessions-list',STATE.sessions,true);
     }
+
+    loadingToast.remove();
+    showToast('Session saved successfully!','success');
   }
   STATE.config=EDIT_DRAFT;EDIT_DRAFT=null;EDIT_AVATAR_DATA={};
   await refreshData();go('landing');
@@ -2679,6 +3187,27 @@ async function deleteSession(){
     }
   });
 }
+
+// Keyboard shortcuts
+document.addEventListener('keydown',(e)=>{
+  // Cmd/Ctrl + S to save
+  if((e.metaKey||e.ctrlKey)&&e.key==='s'){
+    e.preventDefault();
+    if(STATE.screen==='fill'){
+      submitFill();
+    }else if(STATE.screen==='edit'){
+      saveEdit();
+    }
+  }
+  // Escape to close modals
+  if(e.key==='Escape'){
+    if(MODAL_STATE){
+      closeModal();
+    }else if(FILL.picker!==null){
+      closePicker();
+    }
+  }
+});
 
 init();
   </script>
