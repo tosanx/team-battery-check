@@ -1059,6 +1059,165 @@ function updateThemeIcon(){
   }
 }
 
+// Timer State
+let TIMER={
+  minutes:5,
+  seconds:0,
+  isRunning:false,
+  intervalId:null,
+  totalSeconds:300,
+  dropdownOpen:false
+};
+
+function formatTime(mins,secs){
+  return `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+function updateTimerDisplay(){
+  const display=document.getElementById('timer-display');
+  if(display){
+    display.textContent=formatTime(TIMER.minutes,TIMER.seconds);
+  }
+}
+
+function updateTimerInputs(){
+  const minutesInput=document.getElementById('timer-minutes-input');
+  const secondsInput=document.getElementById('timer-seconds-input');
+  if(minutesInput)minutesInput.value=TIMER.minutes;
+  if(secondsInput)secondsInput.value=TIMER.seconds;
+}
+
+function startTimer(){
+  if(TIMER.isRunning)return;
+
+  // Read current values from inputs before starting
+  const minutesInput=document.getElementById('timer-minutes-input');
+  const secondsInput=document.getElementById('timer-seconds-input');
+  if(minutesInput)TIMER.minutes=Math.max(0,Math.min(99,parseInt(minutesInput.value)||0));
+  if(secondsInput)TIMER.seconds=Math.max(0,Math.min(59,parseInt(secondsInput.value)||0));
+  TIMER.totalSeconds=TIMER.minutes*60+TIMER.seconds;
+
+  TIMER.isRunning=true;
+
+  TIMER.intervalId=setInterval(()=>{
+    if(TIMER.totalSeconds<=0){
+      stopTimer();
+      // Show modal when timer reaches 00:00
+      const audio=new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVqzn77BdGAg+ltryxHMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSF1xe/glEILElyx6+2kVRUJPJnc8sFuJAUuhM/z1YU2Bhxqvu7mnEoODlOq5O+zYBoGPJTY88p2KwUme8rx3I4+CRZiturqpVITC0mi4PK8aB8GM4nU8tGAMQYfcsLu45ZFDBFYr+ftrV0aCDyU2PLEcSYEKX/M8dmLOQcZZbzs56FPDwxKouDxvGkdBTWL0/PQgDAFIHTA7uCURgwSV67m7q5dGAk7ltnyxHMoBSh+y/LajDoIG2W76+OeUA0NTKXh8LpoHgU0i9Lzz38wBSBzwO7glEYMEley6O6tXRgJPJbZ8sNyJgQnfsvx2Yw7CBtkuuvjnlAODU2l4fC6aB4FNIvS88+AMAUgdMDu4JRGDBFXsujurV0YCTyW2fLDciYEJ37L8dmMOwgbZLrr451QDg1NpeHwumgeBTSL0vPPgDAFIHPA7uCURgwRV7Lo7q1dGAk8ltnyxHMoBSh+y/LajDoIG2W76+OeUA0NTKXh8LpoHgU0i9Lzz38wBSBzwO7glEYMEley6O6tXRgJPJbZ8sNyJgQnfsvx2Yw7CBtkuuvjnlAODU2l4fC6aB4FNIvS88+AMAUgdMDu4JRGDBFXsujurV0YCTyW2fLDciYEJ37L8dmMOwgbZLrr451QDg1NpeHwumgeBTSL0vPPgDAFIHTA7uCURgwRV7Lo7q1dGAk8ltnyxHMoBSh+y/LajDoIG2W76+OeUA0NTKXh8LpoHgU0i9Lzz38wBSBzwO7glEYMEley6O6tXRgJPJbZ8sNyJgQnfsvx2Yw7CBtkuuvjnlAODU2l4fC6aB4FNIvS88+AMAUgdMDu4JRGDBFXsujurV0YCTyW2fLDciYEJ37L8dmMOwgbZLrr451QDg1NpeHwumgeBTSL0vPPgDAFIHTA7uCURgwRV7Lo7q1dGAk8ltnyxHMoBSh+y/LajDoIG2W76+OeUA0NTKXh8LpoHgU0i9Lzz38wBSBzwO7klEYMEley6O6tXRgJPJbZ8sNyJgQnfsvx2Yw7CBtkuuvjnlAODU2l4fC6aB4FNIvS88+AMAUgdMDu4JRGDBFXsujurV0YCTyW2fLDciYEJ37L8dmMOwgbZLrr451QDg1NpeHwumgeBTSL0vPPgDAFIHTA7uCURgwRV7Lo7q1dGAk8ltnyxHMoBSh+y/LajDoIG2W76+OeUA0NTKXh8LpoHgU0i9Lzz38wBSBzwO7glEYMEley6O6tXRgJPJbZ8sNyJgQnfsvx');
+      audio.play();
+      showTimerAlert();
+      return;
+    }
+
+    TIMER.totalSeconds--;
+    TIMER.minutes=Math.floor(TIMER.totalSeconds/60);
+    TIMER.seconds=TIMER.totalSeconds%60;
+    updateTimerDisplay();
+  },1000);
+
+  updateTimerButton();
+}
+
+function stopTimer(){
+  TIMER.isRunning=false;
+  if(TIMER.intervalId){
+    clearInterval(TIMER.intervalId);
+    TIMER.intervalId=null;
+  }
+  updateTimerButton();
+}
+
+function resetTimer(){
+  stopTimer();
+  TIMER.minutes=0;
+  TIMER.seconds=0;
+  TIMER.totalSeconds=0;
+  updateTimerDisplay();
+  updateTimerInputs();
+}
+
+function addMinute(){
+  TIMER.minutes+=1;
+  TIMER.totalSeconds=TIMER.minutes*60+TIMER.seconds;
+  updateTimerDisplay();
+}
+
+function updateTimerMinutes(value){
+  const mins=parseInt(value)||0;
+  TIMER.minutes=Math.max(0,Math.min(99,mins));
+  TIMER.totalSeconds=TIMER.minutes*60+TIMER.seconds;
+  updateTimerDisplay();
+}
+
+function updateTimerSeconds(value){
+  const secs=parseInt(value)||0;
+  TIMER.seconds=Math.max(0,Math.min(59,secs));
+  TIMER.totalSeconds=TIMER.minutes*60+TIMER.seconds;
+  updateTimerDisplay();
+}
+
+function toggleTimerDropdown(){
+  TIMER.dropdownOpen=!TIMER.dropdownOpen;
+  renderTimerDropdown();
+}
+
+function closeTimerDropdown(){
+  TIMER.dropdownOpen=false;
+  renderTimerDropdown();
+}
+
+function renderTimerDropdown(){
+  const dropdown=document.getElementById('timer-dropdown');
+  if(!dropdown)return;
+
+  if(TIMER.dropdownOpen){
+    dropdown.style.display='block';
+  }else{
+    dropdown.style.display='none';
+  }
+}
+
+function updateTimerButton(){
+  const btn=document.getElementById('timer-start-stop-btn');
+  if(!btn)return;
+
+  if(TIMER.isRunning){
+    btn.textContent='Stop';
+    btn.style.background='var(--wise-sentiment-negative)';
+  }else{
+    btn.textContent='Start';
+    btn.style.background='var(--wise-primary-button-bg)';
+  }
+}
+
+function showTimerAlert(){
+  // Create modal
+  const modal=document.createElement('div');
+  modal.className='custom-modal';
+  modal.style.zIndex='10000';
+
+  modal.innerHTML=`
+    <div class="custom-modal-content" onclick="event.stopPropagation()" style="max-width:400px;">
+      <div style="text-align:center;margin-bottom:var(--space-24);">
+        <div style="font-size:48px;margin-bottom:var(--space-16);">⏰</div>
+        <h2 style="font-size:24px;font-weight:700;color:var(--wise-content-primary);margin-bottom:var(--space-12);">Time's up!</h2>
+        <p style="font-size:16px;line-height:24px;color:var(--wise-content-secondary);">
+          If you haven't already, remember to use the <strong>"Submit My Phone"</strong> button to save your responses.
+        </p>
+      </div>
+      <button onclick="this.closest('.custom-modal').remove();" style="width:100%;padding:var(--space-12) var(--space-24);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-small);font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+        Got it, continue working
+      </button>
+    </div>
+  `;
+
+  modal.onclick=(e)=>{
+    if(e.target===modal)modal.remove();
+  };
+
+  document.body.appendChild(modal);
+}
+
 function ensureThemeToggleButton(){
   // Check if theme button already exists
   let themeBtn=document.getElementById('global-theme-toggle');
@@ -1066,13 +1225,63 @@ function ensureThemeToggleButton(){
     // Create it once
     const div=document.createElement('div');
     div.id='global-theme-toggle';
-    div.style.cssText='position:fixed;top:var(--space-24);right:var(--space-24);z-index:1000;';
-    div.innerHTML=`<button onclick="toggleTheme()" style="padding:var(--space-12);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';" title="Toggle theme">
-      <svg id="theme-icon" style="width:20px;height:20px;color:var(--wise-content-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-    </button>`;
+    div.style.cssText='position:fixed;top:var(--space-24);right:var(--space-24);z-index:1000;display:flex;gap:var(--space-8);align-items:center;';
+    div.innerHTML=`
+      <!-- Timer (hidden on sessions page) -->
+      <div id="timer-container" style="position:relative;display:none;">
+        <button onclick="toggleTimerDropdown()" style="padding:var(--space-8) var(--space-12);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:var(--space-8);box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';" title="Timer">
+          <svg style="width:16px;height:16px;color:var(--wise-content-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span id="timer-display" style="font-size:14px;font-weight:600;color:var(--wise-content-primary);font-variant-numeric:tabular-nums;">05:00</span>
+        </button>
+
+        <!-- Dropdown -->
+        <div id="timer-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);padding:var(--space-16);box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:200px;z-index:1001;">
+          <div style="display:flex;gap:var(--space-8);margin-bottom:var(--space-12);">
+            <div style="flex:1;">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);margin-bottom:var(--space-4);">MM</label>
+              <input type="number" id="timer-minutes-input" value="${TIMER.minutes}" min="0" max="99" onchange="updateTimerMinutes(this.value)" style="width:100%;padding:var(--space-8);background:var(--wise-background-neutral);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);color:var(--wise-content-primary);font-size:14px;font-weight:600;text-align:center;">
+            </div>
+            <div style="flex:1;">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--wise-content-secondary);margin-bottom:var(--space-4);">SS</label>
+              <input type="number" id="timer-seconds-input" value="${TIMER.seconds}" min="0" max="59" onchange="updateTimerSeconds(this.value)" style="width:100%;padding:var(--space-8);background:var(--wise-background-neutral);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);color:var(--wise-content-primary);font-size:14px;font-weight:600;text-align:center;">
+            </div>
+          </div>
+          <div style="display:flex;gap:var(--space-8);margin-bottom:var(--space-8);">
+            <button id="timer-start-stop-btn" onclick="TIMER.isRunning?stopTimer():startTimer();closeTimerDropdown();" style="flex:1;padding:var(--space-8);background:var(--wise-primary-button-bg);color:var(--wise-primary-button-text);border:none;border-radius:var(--radius-small);font-size:14px;font-weight:600;cursor:pointer;">Start</button>
+            <button onclick="addMinute()" style="padding:var(--space-8) var(--space-12);background:var(--wise-background-neutral);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);color:var(--wise-content-primary);font-size:14px;font-weight:600;cursor:pointer;">+1 min</button>
+          </div>
+          <button onclick="resetTimer();closeTimerDropdown();" style="width:100%;padding:var(--space-8);background:transparent;border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);color:var(--wise-content-secondary);font-size:12px;font-weight:600;cursor:pointer;">Reset</button>
+        </div>
+      </div>
+
+      <!-- Theme Toggle -->
+      <button onclick="toggleTheme()" style="padding:var(--space-12);background:var(--wise-background-screen);border:1px solid var(--wise-border-neutral);border-radius:var(--radius-small);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';" title="Toggle theme">
+        <svg id="theme-icon" style="width:20px;height:20px;color:var(--wise-content-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+      </button>
+    `;
     document.body.appendChild(div);
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click',(e)=>{
+      const timerContainer=document.getElementById('timer-container');
+      const dropdown=document.getElementById('timer-dropdown');
+      if(timerContainer&&dropdown&&!timerContainer.contains(e.target)&&TIMER.dropdownOpen){
+        closeTimerDropdown();
+      }
+    });
   }
   updateThemeIcon();
+  updateTimerDisplay();
+
+  // Show/hide timer based on current screen
+  const timerContainer=document.getElementById('timer-container');
+  if(timerContainer){
+    if(STATE.screen==='sessions'){
+      timerContainer.style.display='none';
+    }else{
+      timerContainer.style.display='block';
+    }
+  }
 }
 
 async function init(){
